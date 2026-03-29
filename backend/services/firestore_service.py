@@ -270,7 +270,7 @@ async def clear_all() -> None:
 
     client = _get_client()
     if client is not None:
-        for col_name in [COL_INCIDENTS, COL_AGENT_RUNS, COL_TRACES, COL_TASKS, COL_ALERTS]:
+        for col_name in [COL_INCIDENTS, COL_AGENT_RUNS, COL_TRACES, COL_TASKS, COL_ALERTS, COL_SHELTERS]:
             docs = client.collection(col_name).stream()
             for doc in docs:
                 doc.reference.delete()
