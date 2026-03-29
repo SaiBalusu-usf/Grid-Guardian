@@ -92,7 +92,7 @@ function FitBounds({ markers, zones }: { markers: MapMarker[]; zones: MapZone[] 
 }
 
 export default function MapView({
-  center = [30.2672, -97.7431],
+  center = [27.9506, -82.4572],
   zoom = 12,
   markers = [],
   routes = [],

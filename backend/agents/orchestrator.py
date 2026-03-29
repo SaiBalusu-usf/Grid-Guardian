@@ -96,7 +96,7 @@ async def run_incident_workflow(scenario: dict, stream_manager: StreamManager) -
         # Run agents concurrently
         base_scenario = {
             "scenario": scenario_text,
-            "location": scenario.get("location", "Metro Area"),
+            "location": scenario.get("location", "Tampa, FL"),
             "region": scenario.get("region", "Central Region"),
         }
 

@@ -5,30 +5,30 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
     id: 'severe-storm',
     name: 'Severe Storm',
     description:
-      'Tornado watch near university campus and hospital corridor. High winds, hail, potential flooding across multiple zones.',
+      'Hurricane watch near USF campus and Tampa General Hospital corridor. High winds, storm surge, potential flooding across Tampa Bay.',
     icon: '\u26C8\uFE0F',
     scenario:
-      'Severe thunderstorm with tornado watch near campus and hospital corridor. Wind speeds 75mph, large hail, flash flood warning.',
+      'Hurricane watch with severe thunderstorms near USF campus and Tampa General Hospital. Wind speeds 85mph, storm surge warning, flash flood warning across Hillsborough County.',
     trigger_source: 'weather_alert',
   },
   {
     id: 'grid-outage',
     name: 'Grid Outage',
     description:
-      'Major power grid failure affecting shelters, hospitals, and critical infrastructure. Backup generators failing in sequence.',
+      'Major power grid failure affecting Tampa shelters, hospitals, and critical infrastructure. Backup generators failing in sequence.',
     icon: '\uD83D\uDD0C',
     scenario:
-      'Widespread power grid failure across downtown and medical district. Multiple substations offline, backup generators at 3 hospitals failing. 12,000+ residents without power.',
+      'Widespread power grid failure across downtown Tampa and Davis Islands medical district. Multiple TECO substations offline, backup generators at Tampa General and St. Joseph\'s failing. 15,000+ residents without power.',
     trigger_source: 'grid_monitor',
   },
   {
     id: 'multi-zone-emergency',
     name: 'Multi-Zone Emergency',
     description:
-      'Cascading disaster across multiple zones requiring coordinated shelter operations, evacuations, and resource deployment.',
+      'Cascading disaster across Tampa Bay requiring coordinated shelter operations, evacuations, and resource deployment.',
     icon: '\uD83D\uDEA8',
     scenario:
-      'Multi-zone emergency: flooding in Zone A, structural collapse in Zone B, hazmat spill in Zone C. 5 shelters activating, 3 hospitals on diversion. Estimated 8,000 affected residents.',
+      'Multi-zone emergency across Tampa Bay: storm surge flooding in South Tampa, structural collapse in Ybor City, hazmat spill near Port Tampa. 5 shelters activating, Tampa General on diversion. Estimated 12,000 affected residents.',
     trigger_source: 'emergency_dispatch',
   },
 ];

@@ -159,10 +159,10 @@ async def _live_hazards(region: str, scenario: str) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # NWS active alerts for Texas (area=TX) — adjust for real deployment
+            # NWS active alerts for Florida
             resp = await client.get(
                 "https://api.weather.gov/alerts/active",
-                params={"area": "TX", "severity": "Severe,Extreme"},
+                params={"area": "FL", "severity": "Severe,Extreme"},
                 headers={"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"},
             )
             resp.raise_for_status()

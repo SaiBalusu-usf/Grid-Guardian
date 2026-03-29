@@ -99,13 +99,13 @@ def _mock_weather(location: str, scenario: str) -> dict:
 async def _live_weather(location: str, scenario: str) -> dict:
     """Fetch real weather from NWS API (free, no key).
 
-    1. Get grid point from NWS points endpoint (Austin, TX coords)
+    1. Get grid point from NWS points endpoint (Tampa, FL coords)
     2. Fetch forecast from the grid endpoint
     3. Also fetch active alerts
     Falls back to mock on failure.
     """
-    # Austin, TX coordinates — in production, geocode the location
-    lat, lon = 30.2672, -97.7431
+    # Tampa, FL coordinates
+    lat, lon = 27.9506, -82.4572
     headers = {"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"}
 
     for attempt in range(2):

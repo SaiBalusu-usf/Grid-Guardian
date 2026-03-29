@@ -94,19 +94,19 @@ async def _live_routes(origin: str, destination: str, avoid_zones: list[str]) ->
     """
     import httpx
 
-    # Map location names to Austin-area coordinates for demo
+    # Map location names to Tampa, FL area coordinates for demo
     _COORDS = {
-        "emergency operations center": (-97.7431, 30.2672),
-        "zone a - riverside district": (-97.7500, 30.2450),
-        "zone b - medical district": (-97.7384, 30.3119),
-        "zone a - oak valley": (-97.7600, 30.2750),
-        "fire station 7": (-97.7200, 30.2900),
-        "supply depot": (-97.7100, 30.2600),
-        "metro convention center": (-97.7480, 30.2450),
+        "emergency operations center": (-82.4572, 27.9506),
+        "zone a - riverside district": (-82.4700, 27.9300),
+        "zone b - medical district": (-82.4500, 27.9600),
+        "zone a - oak valley": (-82.4800, 27.9400),
+        "fire station 7": (-82.4400, 27.9700),
+        "supply depot": (-82.4300, 27.9450),
+        "metro convention center": (-82.4580, 27.9420),
     }
 
-    origin_coords = _COORDS.get(origin.lower(), (-97.7431, 30.2672))
-    dest_coords = _COORDS.get(destination.lower(), (-97.7500, 30.2500))
+    origin_coords = _COORDS.get(origin.lower(), (-82.4572, 27.9506))
+    dest_coords = _COORDS.get(destination.lower(), (-82.4700, 27.9300))
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:

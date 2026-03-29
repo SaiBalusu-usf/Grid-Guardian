@@ -8,7 +8,7 @@ import type { Shelter } from '@/lib/types';
 const MOCK_SHELTERS: Shelter[] = [
   {
     shelter_id: 'SH-001',
-    name: 'Austin Convention Center',
+    name: 'Tampa Convention Center',
     capacity: 2000,
     occupancy: 847,
     accessibility: 'full',
@@ -50,7 +50,7 @@ const MOCK_SHELTERS: Shelter[] = [
   },
   {
     shelter_id: 'SH-004',
-    name: 'North Austin Community Center',
+    name: 'Florida State Fairgrounds',
     capacity: 800,
     occupancy: 156,
     accessibility: 'full',
@@ -166,7 +166,7 @@ export default function SheltersPage() {
             <p className="text-xs text-slate-300 leading-relaxed">
               Based on current occupancy rates, recommend redirecting new evacuees to{' '}
               <span className="font-semibold text-white">Millennium Youth Complex</span> (13% occupancy) and{' '}
-              <span className="font-semibold text-white">North Austin Community Center</span> (20% occupancy).
+              <span className="font-semibold text-white">Florida State Fairgrounds</span> (20% occupancy).
               Palmer Events Center and Dove Springs are approaching critical capacity -- consider activating overflow protocols.
             </p>
           </div>

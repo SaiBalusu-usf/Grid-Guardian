@@ -84,7 +84,7 @@ async def run_public_alert(scenario: dict) -> dict:
             "alerts": llm_alerts,
             "total_alerts": len(llm_alerts),
             "languages": ["en", "es"],
-            "regions_covered": impacted_zones or ["Metro Area"],
+            "regions_covered": impacted_zones or ["Tampa Metro Area"],
             "source": "gemini",
             "drafted_at": datetime.utcnow().isoformat(),
         }
@@ -95,7 +95,7 @@ async def run_public_alert(scenario: dict) -> dict:
     hazard_type = _infer_hazard_type(scenario_text)
 
     # Determine regions to alert
-    regions = impacted_zones if impacted_zones else ["Metro Area"]
+    regions = impacted_zones if impacted_zones else ["Tampa Metro Area"]
 
     # Format shelter names
     if shelters:
@@ -179,7 +179,7 @@ async def run_public_alert(scenario: dict) -> dict:
 
 async def _llm_generate_alerts(scenario: dict) -> list[dict] | None:
     """Use Gemini to draft contextual bilingual alerts."""
-    zones = scenario.get("impacted_zones", ["Metro Area"])
+    zones = scenario.get("impacted_zones", ["Tampa Metro Area"])
     shelters = scenario.get("shelters", [])
     shelter_names = ", ".join(s.get("name", "Shelter") for s in shelters[:3]) or "Local emergency shelters"
 

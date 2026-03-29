@@ -16,54 +16,54 @@ const MapView = dynamic(() => import('@/components/MapView'), {
 });
 
 const DEFAULT_MARKERS = [
-  { id: 'hospital-1', position: [30.2849, -97.7341] as [number, number], type: 'hospital' as const, label: 'Dell Seton Medical Center', details: 'Level I Trauma Center - 211 beds' },
-  { id: 'hospital-2', position: [30.3119, -97.7384] as [number, number], type: 'hospital' as const, label: "St. David's North Austin", details: 'General Hospital - 380 beds' },
-  { id: 'hospital-3', position: [30.2286, -97.7564] as [number, number], type: 'hospital' as const, label: "St. David's South Austin", details: 'General Hospital - 250 beds' },
-  { id: 'shelter-1', position: [30.2747, -97.7404] as [number, number], type: 'shelter' as const, label: 'Austin Convention Center', details: 'Primary shelter - Cap. 2,000' },
-  { id: 'shelter-2', position: [30.2983, -97.7165] as [number, number], type: 'shelter' as const, label: 'Palmer Events Center', details: 'Secondary shelter - Cap. 1,500' },
-  { id: 'shelter-3', position: [30.2530, -97.7633] as [number, number], type: 'shelter' as const, label: 'Burger Activity Center', details: 'Neighborhood shelter - Cap. 500' },
-  { id: 'shelter-4', position: [30.3190, -97.7048] as [number, number], type: 'shelter' as const, label: 'North Austin Community Center', details: 'Overflow shelter - Cap. 800' },
-  { id: 'zone-1', position: [30.2862, -97.7394] as [number, number], type: 'zone' as const, label: 'UT Campus Zone', details: 'High density, flooding risk' },
-  { id: 'zone-2', position: [30.2650, -97.7530] as [number, number], type: 'zone' as const, label: 'Downtown Core', details: 'Power grid vulnerability' },
-  { id: 'zone-3', position: [30.2450, -97.7650] as [number, number], type: 'zone' as const, label: 'South Lamar Corridor', details: 'Evacuation congestion point' },
+  { id: 'hospital-1', position: [27.9559, -82.4593] as [number, number], type: 'hospital' as const, label: 'Tampa General Hospital', details: 'Level I Trauma Center - 1,041 beds' },
+  { id: 'hospital-2', position: [27.9850, -82.4570] as [number, number], type: 'hospital' as const, label: 'St. Joseph\'s Hospital', details: 'General Hospital - 492 beds' },
+  { id: 'hospital-3', position: [27.9110, -82.5150] as [number, number], type: 'hospital' as const, label: 'AdventHealth Carrollwood', details: 'Community Hospital - 120 beds' },
+  { id: 'shelter-1', position: [27.9425, -82.4515] as [number, number], type: 'shelter' as const, label: 'Tampa Convention Center', details: 'Primary shelter - Cap. 2,000' },
+  { id: 'shelter-2', position: [27.9750, -82.4590] as [number, number], type: 'shelter' as const, label: 'Hillsborough High School', details: 'Secondary shelter - Cap. 300' },
+  { id: 'shelter-3', position: [28.0750, -82.4850] as [number, number], type: 'shelter' as const, label: 'Idlewild Baptist Church', details: 'Community shelter - Cap. 200' },
+  { id: 'shelter-4', position: [27.9650, -82.3980] as [number, number], type: 'shelter' as const, label: 'Florida State Fairgrounds', details: 'Overflow shelter - Cap. 1,000' },
+  { id: 'zone-1', position: [27.9506, -82.4572] as [number, number], type: 'zone' as const, label: 'Downtown Tampa', details: 'Flood zone, storm surge risk' },
+  { id: 'zone-2', position: [27.9200, -82.4800] as [number, number], type: 'zone' as const, label: 'South Tampa / Bayshore', details: 'Coastal flooding, evacuation zone A' },
+  { id: 'zone-3', position: [27.9700, -82.4100] as [number, number], type: 'zone' as const, label: 'Ybor City / East Tampa', details: 'Low-lying area, power grid vulnerability' },
 ];
 
 const DEFAULT_ZONES = [
-  { id: 'impact-1', center: [30.2862, -97.7394] as [number, number], radius: 1200, color: '#EF4444', label: 'Campus Impact Zone' },
-  { id: 'impact-2', center: [30.2650, -97.7530] as [number, number], radius: 800, color: '#F59E0B', label: 'Downtown Impact Zone' },
-  { id: 'impact-3', center: [30.2450, -97.7650] as [number, number], radius: 600, color: '#F59E0B', label: 'South Corridor Zone' },
+  { id: 'impact-1', center: [27.9506, -82.4572] as [number, number], radius: 1500, color: '#EF4444', label: 'Downtown Tampa Impact Zone' },
+  { id: 'impact-2', center: [27.9200, -82.4800] as [number, number], radius: 1200, color: '#F59E0B', label: 'South Tampa / Bayshore Zone' },
+  { id: 'impact-3', center: [27.9700, -82.4100] as [number, number], radius: 800, color: '#F59E0B', label: 'Ybor City Zone' },
 ];
 
 const DEFAULT_ROUTES = [
   {
     id: 'evac-1',
     positions: [
-      [30.2862, -97.7394],
-      [30.2800, -97.7420],
-      [30.2747, -97.7404],
-    ] as [number, number][],
-    color: '#10B981',
-    label: 'Campus to Convention Center',
-  },
-  {
-    id: 'evac-2',
-    positions: [
-      [30.2650, -97.7530],
-      [30.2700, -97.7300],
-      [30.2747, -97.7404],
+      [27.9506, -82.4572],
+      [27.9450, -82.4550],
+      [27.9425, -82.4515],
     ] as [number, number][],
     color: '#10B981',
     label: 'Downtown to Convention Center',
   },
   {
+    id: 'evac-2',
+    positions: [
+      [27.9200, -82.4800],
+      [27.9350, -82.4650],
+      [27.9425, -82.4515],
+    ] as [number, number][],
+    color: '#10B981',
+    label: 'South Tampa to Convention Center',
+  },
+  {
     id: 'evac-3',
     positions: [
-      [30.2862, -97.7394],
-      [30.2950, -97.7250],
-      [30.2983, -97.7165],
+      [27.9700, -82.4100],
+      [27.9680, -82.4300],
+      [27.9650, -82.3980],
     ] as [number, number][],
     color: '#3B82F6',
-    label: 'Campus to Palmer Events',
+    label: 'Ybor City to Fairgrounds',
   },
 ];
 
@@ -76,7 +76,7 @@ function MapContent() {
     if (incident) {
       const incidentMarker = {
         id: 'incident-main',
-        position: [30.2750, -97.7450] as [number, number],
+        position: [27.9506, -82.4572] as [number, number],
         type: 'incident' as const,
         label: incident.scenario.slice(0, 50),
         details: `Severity: ${incident.severity} | Status: ${incident.status}`,
@@ -99,7 +99,7 @@ function MapContent() {
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span>Austin, TX</span>
+          <span>Tampa, FL</span>
           <span className="text-slate-700">|</span>
           <span>{markers.length} markers</span>
         </div>
@@ -107,7 +107,7 @@ function MapContent() {
 
       <div className="h-[calc(100%-3rem)]">
         <MapView
-          center={[30.2672, -97.7431]}
+          center={[27.9506, -82.4572]}
           zoom={13}
           markers={markers}
           zones={DEFAULT_ZONES}

@@ -22,7 +22,7 @@ async def run_hazard_watcher(scenario: dict) -> dict:
         hazards list, and recommendations.
     """
     scenario_text = scenario.get("scenario", "")
-    location = scenario.get("location", "Metro Area")
+    location = scenario.get("location", "Tampa, FL")
     region = scenario.get("region", "Central Region")
     tool_calls: list[dict] = []
 
