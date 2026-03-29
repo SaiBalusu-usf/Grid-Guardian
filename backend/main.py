@@ -25,6 +25,7 @@ from backend.services.auth import (
     require_role,
     validate_api_key,
 )
+from backend.services.metrics import get_metrics
 from backend.workflows.incident_workflow import start_workflow, cancel_all_workflows
 
 # ---------------------------------------------------------------------------
@@ -253,6 +254,14 @@ async def get_dashboard():
 async def clear_data(request: Request):
     await fs.clear_all()
     return {"status": "cleared"}
+
+
+# ---------------------------------------------------------------------------
+# Metrics
+# ---------------------------------------------------------------------------
+@app.get("/api/metrics")
+async def metrics():
+    return get_metrics()
 
 
 # ---------------------------------------------------------------------------
