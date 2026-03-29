@@ -1,7 +1,7 @@
 """Notification tool for sending alerts through various channels (mock implementation)."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ async def send_notification(
         recipients = []
 
     notification_id = str(uuid4())
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(tz=timezone.utc).isoformat()
 
     logger.info(
         "Notification sent: id=%s channel=%s severity=%s recipients=%d",

@@ -1,7 +1,7 @@
 """Hazard Watcher agent: analyzes weather conditions and hazard zones."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.tools.weather_tool import get_weather
 from backend.tools.hazard_tool import get_hazard_zones
@@ -27,7 +27,7 @@ async def run_hazard_watcher(scenario: dict) -> dict:
     tool_calls: list[dict] = []
 
     # --- Weather data ---
-    t0 = datetime.utcnow().isoformat()
+    t0 = datetime.now(tz=timezone.utc).isoformat()
     weather = await get_weather(location=location, scenario=scenario_text)
     tool_calls.append({
         "tool": "get_weather",
@@ -37,7 +37,7 @@ async def run_hazard_watcher(scenario: dict) -> dict:
     })
 
     # --- Hazard zones ---
-    t1 = datetime.utcnow().isoformat()
+    t1 = datetime.now(tz=timezone.utc).isoformat()
     hazards = await get_hazard_zones(region=region, scenario=scenario_text)
     tool_calls.append({
         "tool": "get_hazard_zones",
@@ -47,7 +47,7 @@ async def run_hazard_watcher(scenario: dict) -> dict:
     })
 
     # --- News feed for situational awareness ---
-    t2 = datetime.utcnow().isoformat()
+    t2 = datetime.now(tz=timezone.utc).isoformat()
     news = await get_news_feed(query=scenario_text, scenario=scenario_text)
     tool_calls.append({
         "tool": "get_news_feed",
@@ -129,7 +129,7 @@ async def run_hazard_watcher(scenario: dict) -> dict:
         "flood_stage": hazards.get("flood_stage", "unknown"),
         "evacuation_recommended": hazards.get("evacuation_recommended", False),
         "tool_calls": tool_calls,
-        "analyzed_at": datetime.utcnow().isoformat(),
+        "analyzed_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

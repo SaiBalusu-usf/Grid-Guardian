@@ -1,7 +1,7 @@
 """News and social media feed tool returning mock disaster-relevant articles."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from backend.config import settings
 
@@ -116,7 +116,7 @@ async def get_news_feed(query: str, scenario: str = "") -> dict:
 def _mock_news(query: str, scenario: str) -> dict:
     """Return mock news articles matched by scenario keywords."""
     combined = f"{scenario} {query}".lower()
-    now = datetime.utcnow()
+    now = datetime.now(tz=timezone.utc)
 
     selected: list[dict] | None = None
     for key, articles in _MOCK_ARTICLES_BY_SCENARIO.items():
@@ -167,7 +167,7 @@ async def _live_news(query: str, scenario: str) -> dict:
             resp.raise_for_status()
             data = resp.json()
 
-        now = datetime.utcnow()
+        now = datetime.now(tz=timezone.utc)
         articles = []
         for i, art in enumerate(data.get("articles", [])[:5]):
             articles.append({

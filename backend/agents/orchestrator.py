@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -367,11 +367,11 @@ async def _run_agent_tracked(
     try:
         output = await agent_fn(input_data)
         run.output = output
-        run.end_time = datetime.utcnow().isoformat()
+        run.end_time = datetime.now(tz=timezone.utc).isoformat()
         run.tool_calls = output.get("tool_calls", [])
     except Exception as exc:
         run.error = str(exc)
-        run.end_time = datetime.utcnow().isoformat()
+        run.end_time = datetime.now(tz=timezone.utc).isoformat()
         logger.error("Agent %s failed: %s", agent_name, exc)
         output = {"error": str(exc)}
         run.output = output

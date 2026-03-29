@@ -1,7 +1,7 @@
 """Weather data tool with mock and live paths."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -87,11 +87,11 @@ def _mock_weather(location: str, scenario: str) -> dict:
     combined = f"{scenario} {location}".lower()
     for key, data in _MOCK_SCENARIOS.items():
         if key in combined:
-            result = {**data, "location": location, "retrieved_at": datetime.utcnow().isoformat()}
+            result = {**data, "location": location, "retrieved_at": datetime.now(tz=timezone.utc).isoformat()}
             logger.info("Mock weather for '%s' matched scenario '%s'", location, key)
             return result
 
-    result = {**_DEFAULT_MOCK, "location": location, "retrieved_at": datetime.utcnow().isoformat()}
+    result = {**_DEFAULT_MOCK, "location": location, "retrieved_at": datetime.now(tz=timezone.utc).isoformat()}
     logger.info("Mock weather for '%s' using default scenario", location)
     return result
 
@@ -162,7 +162,7 @@ async def _live_weather(location: str, scenario: str) -> dict:
                     "confidence": confidence,
                     "location": location,
                     "source": "weather.gov",
-                    "retrieved_at": datetime.utcnow().isoformat(),
+                    "retrieved_at": datetime.now(tz=timezone.utc).isoformat(),
                 }
         except Exception as exc:
             logger.warning("Weather API attempt %d/2 failed: %s", attempt + 1, exc)

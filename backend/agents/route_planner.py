@@ -1,7 +1,7 @@
 """Route Planner agent: determines safe routes and identifies closures."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.tools.routing_tool import get_routes
 
@@ -37,7 +37,7 @@ async def run_route_planner(scenario: dict) -> dict:
 
     # Query routes for each priority pair
     for pair in _ROUTE_PAIRS:
-        t0 = datetime.utcnow().isoformat()
+        t0 = datetime.now(tz=timezone.utc).isoformat()
         result = await get_routes(
             origin=pair["origin"],
             destination=pair["destination"],
@@ -108,7 +108,7 @@ async def run_route_planner(scenario: dict) -> dict:
         "estimated_clearance_time": estimated_clearance,
         "total_routes_evaluated": len(all_routes),
         "tool_calls": tool_calls,
-        "analyzed_at": datetime.utcnow().isoformat(),
+        "analyzed_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

@@ -1,6 +1,6 @@
 """TraceEvent model for the incident event timeline."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -17,5 +17,5 @@ class TraceEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     incident_id: str
     event_type: str
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(tz=timezone.utc).isoformat())
     payload: dict = {}

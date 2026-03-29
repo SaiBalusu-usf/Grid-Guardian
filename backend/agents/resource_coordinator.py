@@ -1,7 +1,7 @@
 """Resource Coordinator agent: recommends resource allocation for incident response."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +177,7 @@ async def run_resource_coordinator(scenario: dict) -> dict:
         "supply_summary": supply_summary,
         "severity_basis": severity,
         "zone_multiplier": round(zone_multiplier, 2),
-        "analyzed_at": datetime.utcnow().isoformat(),
+        "analyzed_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

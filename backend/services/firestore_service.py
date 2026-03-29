@@ -1,7 +1,7 @@
 """High-level Firestore service managing all GridGuardian collections."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.models.incident import Incident
 from backend.models.agent_run import AgentRun
@@ -184,7 +184,7 @@ async def acknowledge_alert(alert_id: str) -> Alert:
     """Mark an alert as acknowledged."""
     updates = {
         "status": "acknowledged",
-        "sent_at": datetime.utcnow().isoformat(),
+        "sent_at": datetime.now(tz=timezone.utc).isoformat(),
     }
     await update_document(COL_ALERTS, alert_id, updates)
     doc = await read_document(COL_ALERTS, alert_id)

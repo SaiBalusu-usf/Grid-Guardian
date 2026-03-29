@@ -1,7 +1,7 @@
 """Route planning tool with mock and live paths."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from backend.config import settings
@@ -80,7 +80,7 @@ def _mock_routes(origin: str, destination: str, avoid_zones: list[str]) -> dict:
         "origin": origin,
         "destination": destination,
         "avoid_zones": avoid_zones,
-        "retrieved_at": datetime.utcnow().isoformat(),
+        "retrieved_at": datetime.now(tz=timezone.utc).isoformat(),
     }
     logger.info("Mock routes generated: %s -> %s (%d routes)", origin, destination, len(routes))
     return result
@@ -141,7 +141,7 @@ async def _live_routes(origin: str, destination: str, avoid_zones: list[str]) ->
             "origin": origin,
             "destination": destination,
             "source": "osrm" if routes else "mock_fallback",
-            "retrieved_at": datetime.utcnow().isoformat(),
+            "retrieved_at": datetime.now(tz=timezone.utc).isoformat(),
         }
         logger.info("Live routes: %s -> %s (%d routes from OSRM)", origin, destination, len(routes))
         return result

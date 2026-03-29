@@ -178,8 +178,8 @@ class InMemoryFirestoreService:
 
 def _now() -> str:
     """ISO timestamp string."""
-    import datetime
-    return datetime.datetime.utcnow().isoformat() + "Z"
+    from datetime import datetime, timezone
+    return datetime.now(tz=timezone.utc).isoformat() + "Z"
 
 
 # ============================================================================

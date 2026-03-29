@@ -1,7 +1,7 @@
 """Public Alert agent: drafts bilingual emergency alerts for affected regions."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.services.gemini_client import generate_json
 
@@ -86,7 +86,7 @@ async def run_public_alert(scenario: dict) -> dict:
             "languages": ["en", "es"],
             "regions_covered": impacted_zones or ["Tampa Metro Area"],
             "source": "gemini",
-            "drafted_at": datetime.utcnow().isoformat(),
+            "drafted_at": datetime.now(tz=timezone.utc).isoformat(),
         }
 
     # Fallback: template-based alerts
@@ -167,7 +167,7 @@ async def run_public_alert(scenario: dict) -> dict:
         "total_alerts": len(alerts),
         "languages": ["en", "es"],
         "regions_covered": regions,
-        "drafted_at": datetime.utcnow().isoformat(),
+        "drafted_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

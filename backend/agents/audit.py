@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.services.gemini_client import generate_json
 
@@ -109,7 +109,7 @@ async def run_audit(plan: dict, incident_id: str | None = None) -> dict:
         "severity": audit_severity,
         "audit_iteration": call_number,
         "plan_id": plan.get("plan_id", "unknown"),
-        "audited_at": datetime.utcnow().isoformat(),
+        "audited_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

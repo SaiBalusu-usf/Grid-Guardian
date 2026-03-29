@@ -1,7 +1,7 @@
 """Planner agent: merges parallel specialist outputs into a unified action plan."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -188,7 +188,7 @@ async def run_planner(
         "notes": notes,
         "severity": hazard_output.get("severity", "high"),
         "impacted_zones": hazard_output.get("impacted_zones", []),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     logger.info(

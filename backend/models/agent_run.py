@@ -1,6 +1,6 @@
 """AgentRun model tracking individual agent executions within an incident."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -12,7 +12,7 @@ class AgentRun(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     incident_id: str
     agent_name: str
-    start_time: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    start_time: str = Field(default_factory=lambda: datetime.now(tz=timezone.utc).isoformat())
     end_time: str | None = None
     input: dict = {}
     output: dict = {}

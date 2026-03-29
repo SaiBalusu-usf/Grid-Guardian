@@ -1,7 +1,7 @@
 """Hazard zone data tool with mock and live paths."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.config import settings
 
@@ -140,11 +140,11 @@ def _mock_hazards(region: str, scenario: str) -> dict:
     combined = f"{scenario} {region}".lower()
     for key, data in _MOCK_ZONES.items():
         if key in combined:
-            result = {**data, "region": region, "retrieved_at": datetime.utcnow().isoformat()}
+            result = {**data, "region": region, "retrieved_at": datetime.now(tz=timezone.utc).isoformat()}
             logger.info("Mock hazard for '%s' matched scenario '%s'", region, key)
             return result
 
-    result = {**_DEFAULT_MOCK, "region": region, "retrieved_at": datetime.utcnow().isoformat()}
+    result = {**_DEFAULT_MOCK, "region": region, "retrieved_at": datetime.now(tz=timezone.utc).isoformat()}
     logger.info("Mock hazard for '%s' using default scenario", region)
     return result
 
@@ -192,7 +192,7 @@ async def _live_hazards(region: str, scenario: str) -> dict:
             "evacuation_recommended": has_extreme,
             "region": region,
             "source": "nws_api" if zones else "mock_fallback",
-            "retrieved_at": datetime.utcnow().isoformat(),
+            "retrieved_at": datetime.now(tz=timezone.utc).isoformat(),
         }
         logger.info("Live hazard data: %d zones from NWS", len(zones))
         return result
