@@ -133,7 +133,9 @@ async def _live_weather(location: str, scenario: str) -> dict:
                         p = periods[0]
                         condition = p.get("shortForecast", "unknown")
                         temperature_f = p.get("temperature", 0)
-                        wind_mph = int("".join(c for c in p.get("windSpeed", "0") if c.isdigit()) or "0")
+                        import re
+                        wind_nums = re.findall(r'\d+', p.get("windSpeed", "0"))
+                        wind_mph = max(int(n) for n in wind_nums) if wind_nums else 0
                         precipitation = p.get("detailedForecast", "")[:200]
 
                 # Get active alerts

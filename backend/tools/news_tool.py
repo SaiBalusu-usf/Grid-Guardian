@@ -145,51 +145,68 @@ def _mock_news(query: str, scenario: str) -> dict:
 
 
 async def _live_news(query: str, scenario: str) -> dict:
-    """Fetch real news from GDELT DOC API (free, no key required).
+    """Fetch real situational awareness from NWS alerts + Google News RSS.
 
-    Falls back to mock if the API is unreachable.
+    Uses NWS active alerts as primary source (always available, free),
+    supplemented by Google News RSS for broader context.
+    Falls back to mock if both fail.
     """
     import httpx
 
+    now = datetime.now(tz=timezone.utc)
+    articles: list[dict] = []
+
     try:
-        search_terms = query.replace(",", " ")[:100]
         async with httpx.AsyncClient(timeout=10.0) as client:
+            # Source 1: NWS active alerts for Florida
             resp = await client.get(
-                "https://api.gdeltproject.org/api/v2/doc/doc",
-                params={
-                    "query": search_terms,
-                    "mode": "ArtList",
-                    "maxrecords": "5",
-                    "format": "json",
-                    "sort": "DateDesc",
-                },
+                "https://api.weather.gov/alerts/active",
+                params={"area": "FL"},
+                headers={"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"},
             )
-            resp.raise_for_status()
-            data = resp.json()
+            if resp.status_code == 200:
+                for i, feat in enumerate(resp.json().get("features", [])[:4]):
+                    props = feat.get("properties", {})
+                    articles.append({
+                        "title": props.get("headline", props.get("event", "NWS Alert"))[:150],
+                        "source": f"NWS - {props.get('senderName', 'National Weather Service')}",
+                        "summary": (props.get("description", "") or "")[:300],
+                        "relevance_score": round(0.95 - i * 0.03, 2),
+                        "timestamp": props.get("sent", now.isoformat()),
+                    })
 
-        now = datetime.now(tz=timezone.utc)
-        articles = []
-        for i, art in enumerate(data.get("articles", [])[:5]):
-            articles.append({
-                "title": art.get("title", "Untitled")[:150],
-                "source": art.get("domain", "Unknown"),
-                "summary": art.get("seendate", ""),
-                "relevance_score": round(0.95 - i * 0.05, 2),
-                "timestamp": art.get("seendate", now.isoformat()),
-                "url": art.get("url", ""),
-            })
-
-        if not articles:
-            return _mock_news(query, scenario)
-
-        logger.info("Live news: %d articles from GDELT for '%s'", len(articles), search_terms[:40])
-        return {
-            "articles": articles,
-            "query": query,
-            "source": "gdelt",
-            "retrieved_at": now.isoformat(),
-        }
+            # Source 2: Google News RSS (free, no key)
+            resp2 = await client.get(
+                "https://news.google.com/rss/search",
+                params={"q": "Tampa Florida emergency OR disaster OR hurricane", "hl": "en-US", "gl": "US"},
+                headers={"User-Agent": "GridGuardian/1.0"},
+                follow_redirects=True,
+            )
+            if resp2.status_code == 200:
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(resp2.text)
+                for i, item in enumerate(root.findall(".//item")[:3]):
+                    title = item.findtext("title", "")
+                    pub = item.findtext("pubDate", now.isoformat())
+                    source_el = item.findtext("source", "Google News")
+                    articles.append({
+                        "title": title[:150],
+                        "source": source_el,
+                        "summary": "",
+                        "relevance_score": round(0.80 - i * 0.05, 2),
+                        "timestamp": pub,
+                    })
 
     except Exception as exc:
-        logger.warning("GDELT news API failed (%s), falling back to mock", exc)
+        logger.warning("Live news fetch failed (%s)", exc)
+
+    if not articles:
         return _mock_news(query, scenario)
+
+    logger.info("Live news: %d articles (NWS + Google News)", len(articles))
+    return {
+        "articles": articles,
+        "query": query,
+        "source": "nws_google_news",
+        "retrieved_at": now.isoformat(),
+    }

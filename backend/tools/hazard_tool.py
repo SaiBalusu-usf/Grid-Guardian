@@ -159,42 +159,43 @@ async def _live_hazards(region: str, scenario: str) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # NWS active alerts for Florida
+            # NWS active alerts for Florida — include all severities
             resp = await client.get(
                 "https://api.weather.gov/alerts/active",
-                params={"area": "FL", "severity": "Severe,Extreme"},
+                params={"area": "FL"},
                 headers={"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"},
             )
             resp.raise_for_status()
             data = resp.json()
 
         features = data.get("features", [])
+        severity_map = {"Extreme": "critical", "Severe": "high", "Moderate": "medium", "Minor": "low"}
         zones = []
-        for i, feat in enumerate(features[:5]):
+        for i, feat in enumerate(features[:8]):
             props = feat.get("properties", {})
-            severity_map = {"Extreme": "critical", "Severe": "high", "Moderate": "medium"}
             zones.append({
                 "zone_id": f"NWS-{i+1:03d}",
                 "type": props.get("event", "unknown").lower().replace(" ", "_"),
                 "risk_level": severity_map.get(props.get("severity", ""), "medium"),
-                "affected_area_sq_mi": 15.0,  # NWS doesn't provide area directly
-                "population_estimate": 30000,  # would need census data for real estimate
-                "description": (props.get("headline", "") or "")[:200],
+                "affected_area_sq_mi": 15.0,
+                "population_estimate": 30000,
+                "description": (props.get("headline", "") or props.get("description", "")[:200] or "")[:200],
                 "nws_id": props.get("id", ""),
             })
 
         has_flood = any("flood" in z["type"] for z in zones)
-        has_extreme = any(z["risk_level"] == "critical" for z in zones)
+        has_extreme = any(z["risk_level"] in ("critical", "high") for z in zones)
 
         result = {
-            "zones": zones if zones else _DEFAULT_MOCK["zones"],
-            "flood_stage": "major" if has_flood else "none",
+            "zones": zones,
+            "flood_stage": "major" if has_flood else "moderate" if zones else "none",
             "evacuation_recommended": has_extreme,
             "region": region,
-            "source": "nws_api" if zones else "mock_fallback",
+            "source": "nws_api",
+            "alert_count": len(features),
             "retrieved_at": datetime.now(tz=timezone.utc).isoformat(),
         }
-        logger.info("Live hazard data: %d zones from NWS", len(zones))
+        logger.info("Live hazard data: %d zones from NWS (%d total alerts in FL)", len(zones), len(features))
         return result
 
     except Exception as exc:
