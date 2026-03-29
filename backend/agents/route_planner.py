@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 # Default origin/destination pairs for emergency routing
 _ROUTE_PAIRS = [
-    {"origin": "Emergency Operations Center", "destination": "Zone A - Riverside District"},
-    {"origin": "Emergency Operations Center", "destination": "Zone B - Medical District"},
-    {"origin": "Fire Station 7", "destination": "Zone A - Oak Valley"},
-    {"origin": "Supply Depot", "destination": "Metro Convention Center"},
+    {"origin": "Emergency Operations Center", "destination": "Zone A - South Tampa / Bayshore"},
+    {"origin": "Emergency Operations Center", "destination": "Zone B - Davis Islands Medical"},
+    {"origin": "Fire Station 7", "destination": "Zone C - Ybor City / East Tampa"},
+    {"origin": "Supply Depot", "destination": "Tampa Convention Center"},
 ]
 
 

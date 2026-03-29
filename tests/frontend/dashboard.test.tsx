@@ -35,7 +35,7 @@ const mockDashboardData = {
       type: "hurricane",
       severity: "high",
       status: "active",
-      location: "Austin, TX",
+      location: "Tampa, FL",
       description: "Category 3 hurricane approaching",
       created_at: "2026-03-28T10:00:00Z",
     },
@@ -264,7 +264,7 @@ describe("Dashboard", () => {
     });
     expect(screen.getByText("hurricane")).toBeInTheDocument();
     expect(screen.getByText("high")).toBeInTheDocument();
-    expect(screen.getByText("Austin, TX")).toBeInTheDocument();
+    expect(screen.getByText("Tampa, FL")).toBeInTheDocument();
   });
 
   it("renders stat cards with correct values", async () => {

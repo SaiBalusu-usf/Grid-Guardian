@@ -26,7 +26,7 @@ os.environ["USE_MOCK"] = "true"
 async def weather_tool(query: dict[str, Any]) -> dict[str, Any]:
     """Mock weather tool -- returns deterministic storm / outage data."""
     scenario = query.get("scenario", "").lower()
-    location = query.get("location", "Austin, TX")
+    location = query.get("location", "Tampa, FL")
 
     if "storm" in scenario or "hurricane" in scenario:
         return {
@@ -125,7 +125,7 @@ async def hazard_tool(query: dict[str, Any]) -> dict[str, Any]:
 
 async def routing_tool(query: dict[str, Any]) -> dict[str, Any]:
     """Mock routing / evacuation tool."""
-    origin = query.get("origin", "Downtown Austin")
+    origin = query.get("origin", "Downtown Tampa")
     destination = query.get("destination", "Lincoln Community Center")
     return {
         "origin": origin,
@@ -222,7 +222,7 @@ async def news_tool(query: str, max_results: int = 5) -> dict:
                 "relevance_score": 0.95,
             },
             {
-                "title": "Austin Emergency Services Activate Hurricane Response Plan",
+                "title": "Tampa Emergency Services Activate Hurricane Response Plan",
                 "source": "Mock Local News",
                 "published": "2026-03-28T09:00:00Z",
                 "summary": "City opens emergency shelters and deploys first responders.",
@@ -253,7 +253,7 @@ class TestWeatherTool:
     @pytest.mark.asyncio
     async def test_weather_tool_mock_storm(self):
         """Storm scenario returns severe weather with high wind and rainfall."""
-        result = await weather_tool({"scenario": "hurricane", "location": "Austin, TX"})
+        result = await weather_tool({"scenario": "hurricane", "location": "Tampa, FL"})
 
         assert result["condition"] == "severe_storm"
         assert result["wind_speed_mph"] >= 100
@@ -266,7 +266,7 @@ class TestWeatherTool:
     @pytest.mark.asyncio
     async def test_weather_tool_mock_outage(self):
         """Power outage scenario returns winter storm conditions."""
-        result = await weather_tool({"scenario": "power outage", "location": "Austin, TX"})
+        result = await weather_tool({"scenario": "power outage", "location": "Tampa, FL"})
 
         assert result["condition"] == "overcast"
         assert result["temperature_f"] < 50
@@ -277,7 +277,7 @@ class TestWeatherTool:
     @pytest.mark.asyncio
     async def test_weather_tool_clear_default(self):
         """Default scenario returns clear conditions with no alerts."""
-        result = await weather_tool({"scenario": "normal", "location": "Austin, TX"})
+        result = await weather_tool({"scenario": "normal", "location": "Tampa, FL"})
 
         assert result["condition"] == "clear"
         assert result["alerts"] == []
@@ -318,11 +318,11 @@ class TestRoutingTool:
     async def test_routing_tool_mock(self):
         """Routing tool returns multiple routes with a recommendation."""
         result = await routing_tool({
-            "origin": "Downtown Austin",
+            "origin": "Downtown Tampa",
             "destination": "Lincoln Community Center",
         })
 
-        assert result["origin"] == "Downtown Austin"
+        assert result["origin"] == "Downtown Tampa"
         assert result["destination"] == "Lincoln Community Center"
         assert len(result["routes"]) >= 2
         assert result["recommended_route"] is not None
@@ -417,9 +417,9 @@ class TestNewsTool:
     @pytest.mark.asyncio
     async def test_news_tool(self):
         """News tool returns relevant articles with metadata."""
-        result = await news_tool("hurricane Austin Texas")
+        result = await news_tool("hurricane Tampa Texas")
 
-        assert result["query"] == "hurricane Austin Texas"
+        assert result["query"] == "hurricane Tampa Texas"
         assert len(result["articles"]) > 0
         assert result["source"] == "mock"
 

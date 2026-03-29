@@ -239,7 +239,7 @@ See [docs/API.md](API.md) for full request/response schemas.
 
 | Scenario | Description | Key Features Shown |
 |----------|-------------|-------------------|
-| **Hurricane** | Category 3 hurricane approaching Austin | Parallel agents, shelter overflow, audit loop |
+| **Hurricane** | Category 3 hurricane approaching Tampa | Parallel agents, shelter overflow, audit loop |
 | **Earthquake** | 6.2 magnitude earthquake | Structural assessment, route planning |
 | **Power Outage** | Ice storm causing grid failure | Infrastructure monitoring, generator deployment |
 | **Flood** | Flash flooding in urban area | Hazard mapping, evacuation routing |

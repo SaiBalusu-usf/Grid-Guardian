@@ -49,3 +49,15 @@ export async function acknowledgeAlert(id: string): Promise<Alert> {
 export async function getDashboard(): Promise<DashboardData> {
   return request<DashboardData>('/api/dashboard');
 }
+
+export async function getShelters(): Promise<any[]> {
+  return request<any[]>('/api/shelters');
+}
+
+export async function clearData(): Promise<void> {
+  await request('/api/clear', { method: 'POST' });
+}
+
+export async function getIncidents(): Promise<any[]> {
+  return request<any[]>('/api/incidents');
+}

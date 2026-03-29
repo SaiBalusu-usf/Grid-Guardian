@@ -259,7 +259,7 @@ class TestAgentRuns:
             "agent": "weather_analyst",
             "status": "completed",
             "duration_ms": 245.5,
-            "input_summary": "Analyze weather for Austin, TX hurricane scenario",
+            "input_summary": "Analyze weather for Tampa, FL hurricane scenario",
             "output_summary": "Category 3 hurricane, 120mph winds",
         }
         result = await db.log_agent_run(run)
@@ -289,7 +289,7 @@ class TestTraces:
             "event_type": "agent_start",
             "agent": "weather_analyst",
             "message": "Starting weather analysis for hurricane scenario",
-            "data": {"scenario": "hurricane", "location": "Austin, TX"},
+            "data": {"scenario": "hurricane", "location": "Tampa, FL"},
         }
         result = await db.add_trace(trace)
 

@@ -96,8 +96,10 @@ async def health():
     """Health check endpoint."""
     return {
         "status": "ok",
-        "service": "gridguardian",
+        "service": "gridguardian-backend",
+        "version": "1.0.0",
         "mock_mode": settings.is_mock,
+        "shelter_agent_url": settings.SHELTER_AGENT_URL,
     }
 
 
@@ -167,6 +169,35 @@ async def acknowledge_alert(alert_id: str):
 async def get_dashboard():
     """Aggregated dashboard statistics."""
     return await fs.get_dashboard_data()
+
+
+# ---------------------------------------------------------------------------
+# Shelters
+# ---------------------------------------------------------------------------
+@app.get("/api/shelters")
+async def get_shelters():
+    """Retrieve all shelters."""
+    shelters = await fs.get_shelters()
+    return [s.model_dump() for s in shelters]
+
+
+# ---------------------------------------------------------------------------
+# Incidents list
+# ---------------------------------------------------------------------------
+@app.get("/api/incidents")
+async def list_incidents():
+    """List all incidents (most recent first)."""
+    return await fs.list_incidents()
+
+
+# ---------------------------------------------------------------------------
+# Clear data
+# ---------------------------------------------------------------------------
+@app.post("/api/clear")
+async def clear_data():
+    """Clear all simulation data (incidents, tasks, alerts, traces)."""
+    await fs.clear_all()
+    return {"status": "cleared"}
 
 
 # ---------------------------------------------------------------------------

@@ -103,7 +103,7 @@ async def run_public_alert(scenario: dict) -> dict:
             s.get("name", s.get("shelter_id", "Unknown")) for s in shelters[:3]
         )
     else:
-        shelter_names = "Lincoln Community Center, Riverside High School Gymnasium, Metro Convention Center"
+        shelter_names = "Tampa Convention Center, Hillsborough High School Gymnasium, Florida State Fairgrounds"
 
     # Select template tier
     template_key = severity if severity in _ALERT_TEMPLATES else "high"

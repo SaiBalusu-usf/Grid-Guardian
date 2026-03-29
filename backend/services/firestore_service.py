@@ -34,35 +34,35 @@ COL_SHELTERS = "shelters"
 _SEED_SHELTERS: list[dict] = [
     {
         "shelter_id": "shelter-001",
-        "name": "Lincoln Community Center",
+        "name": "Tampa Convention Center",
         "capacity": 500,
         "occupancy": 0,
         "accessibility": "full_ada",
-        "supplies": {"water_gallons": 800, "cots": 400, "first_aid_kits": 60, "blankets": 500},
+        "supplies": {"water_gallons": 800, "cots": 350, "first_aid_kits": 75, "blankets": 400},
     },
     {
         "shelter_id": "shelter-002",
-        "name": "Riverside High School Gymnasium",
-        "capacity": 350,
+        "name": "Hillsborough High School Gymnasium",
+        "capacity": 300,
         "occupancy": 0,
         "accessibility": "wheelchair",
-        "supplies": {"water_gallons": 500, "cots": 200, "first_aid_kits": 40, "blankets": 300},
+        "supplies": {"water_gallons": 500, "cots": 150, "first_aid_kits": 20, "blankets": 180},
     },
     {
         "shelter_id": "shelter-003",
-        "name": "Eastside Baptist Church",
+        "name": "Idlewild Baptist Church",
         "capacity": 200,
         "occupancy": 0,
         "accessibility": "standard",
-        "supplies": {"water_gallons": 300, "cots": 150, "first_aid_kits": 25, "blankets": 200},
+        "supplies": {"water_gallons": 400, "cots": 180, "first_aid_kits": 40, "blankets": 200},
     },
     {
         "shelter_id": "shelter-004",
-        "name": "Metro Convention Center - Hall B",
-        "capacity": 1200,
+        "name": "Florida State Fairgrounds",
+        "capacity": 1000,
         "occupancy": 0,
         "accessibility": "full_ada",
-        "supplies": {"water_gallons": 2000, "cots": 800, "first_aid_kits": 100, "blankets": 1000},
+        "supplies": {"water_gallons": 1500, "cots": 800, "first_aid_kits": 100, "blankets": 900},
     },
 ]
 
@@ -97,6 +97,13 @@ async def get_incident(incident_id: str) -> Incident | None:
     if doc is None:
         return None
     return Incident(**doc)
+
+
+async def list_incidents() -> list[dict]:
+    """List all incidents, most recent first."""
+    docs = await query_collection(COL_INCIDENTS)
+    incidents = sorted(docs, key=lambda x: x.get("started_at", ""), reverse=True)
+    return incidents
 
 
 # ---------------------------------------------------------------------------
@@ -230,26 +237,47 @@ async def get_dashboard_data() -> dict:
     total_shelter_occupancy = sum(s.occupancy for s in shelters)
 
     return {
-        "total_incidents": len(incidents),
         "active_incidents": len(active_incidents),
-        "completed_incidents": len(completed_incidents),
         "total_tasks": len(tasks),
         "pending_tasks": len(pending_tasks),
-        "in_progress_tasks": len(in_progress_tasks),
-        "total_alerts": len(alerts),
-        "unacknowledged_alerts": len(unacked_alerts),
-        "shelter_count": len(shelters),
+        "active_alerts": len(unacked_alerts),
         "shelter_capacity": total_shelter_capacity,
         "shelter_occupancy": total_shelter_occupancy,
-        "shelters": [s.model_dump() for s in shelters],
         "recent_incidents": [
             {
                 "id": i.get("id"),
                 "scenario": i.get("scenario"),
-                "severity": i.get("severity"),
+                "severity": i.get("severity", "unknown"),
+                "confidence": i.get("confidence", 0),
                 "status": i.get("status"),
                 "started_at": i.get("started_at"),
+                "trigger_source": i.get("trigger_source", ""),
+                "impacted_zones": i.get("impacted_zones", []),
+                "final_plan": i.get("final_plan"),
             }
             for i in sorted(incidents, key=lambda x: x.get("started_at", ""), reverse=True)[:10]
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# Clear all data
+# ---------------------------------------------------------------------------
+
+async def clear_all() -> None:
+    """Clear all simulation data from all collections."""
+    from backend.tools.firestore_tool import _in_memory_store, _get_client
+
+    client = _get_client()
+    if client is not None:
+        for col_name in [COL_INCIDENTS, COL_AGENT_RUNS, COL_TRACES, COL_TASKS, COL_ALERTS]:
+            docs = client.collection(col_name).stream()
+            for doc in docs:
+                doc.reference.delete()
+        logger.info("Cleared all Firestore collections")
+    else:
+        _in_memory_store.clear()
+        logger.info("Cleared in-memory store")
+
+    global _shelters_seeded
+    _shelters_seeded = False

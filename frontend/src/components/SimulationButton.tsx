@@ -29,8 +29,9 @@ export default function SimulationButton({
     setError(null);
 
     try {
-      const incident = await simulateIncident(scenario, triggerSource);
-      router.push(`/dashboard?incident=${incident.id}`);
+      const result = await simulateIncident(scenario, triggerSource);
+      const id = (result as any).incident_id || result.id;
+      router.push(`/dashboard?incident=${id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to start simulation');
     } finally {

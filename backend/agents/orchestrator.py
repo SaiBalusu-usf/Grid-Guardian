@@ -453,30 +453,30 @@ def _fallback_shelter_data(incident_id: str) -> dict:
         "shelters": [
             {
                 "shelter_id": "shelter-001",
-                "name": "Lincoln Community Center",
+                "name": "Tampa Convention Center",
                 "capacity": 500,
-                "recommended_assignment": "Zone A evacuees",
+                "recommended_assignment": "Downtown Tampa evacuees",
                 "accessibility": "full_ada",
                 "supplies_adequate": True,
             },
             {
                 "shelter_id": "shelter-002",
-                "name": "Riverside High School Gymnasium",
-                "capacity": 350,
-                "recommended_assignment": "Zone B evacuees",
+                "name": "Hillsborough High School Gymnasium",
+                "capacity": 300,
+                "recommended_assignment": "North Tampa evacuees",
                 "accessibility": "wheelchair",
                 "supplies_adequate": True,
             },
             {
                 "shelter_id": "shelter-004",
-                "name": "Metro Convention Center - Hall B",
-                "capacity": 1200,
+                "name": "Florida State Fairgrounds",
+                "capacity": 1000,
                 "recommended_assignment": "Overflow / special needs",
                 "accessibility": "full_ada",
                 "supplies_adequate": True,
             },
         ],
-        "total_capacity": 2050,
+        "total_capacity": 1800,
         "recommendation": "Activate all three shelters immediately. Prioritize ADA-accessible facilities for special-needs populations.",
     }
 

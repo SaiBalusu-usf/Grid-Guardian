@@ -38,7 +38,7 @@ Trigger a new incident simulation. This starts the multi-agent pipeline: weather
 {
   "scenario_type": "hurricane",
   "severity": "high",
-  "location": "Austin, TX",
+  "location": "Tampa, FL",
   "description": "Category 3 hurricane with 120mph winds, expected landfall in 6 hours",
   "affected_population": 15000,
   "special_requirements": ["pet_friendly", "medical_staff"]
@@ -49,7 +49,7 @@ Trigger a new incident simulation. This starts the multi-agent pipeline: weather
 |-------|------|----------|-------------|
 | `scenario_type` | string | yes | One of: `hurricane`, `earthquake`, `flood`, `wildfire`, `power_outage`, `winter_storm` |
 | `severity` | string | no | `low`, `medium`, `high`, `critical`. Default: `medium` |
-| `location` | string | no | Geographic location. Default: `Austin, TX` |
+| `location` | string | no | Geographic location. Default: `Tampa, FL` |
 | `description` | string | no | Free-text scenario description |
 | `affected_population` | integer | no | Estimated affected population |
 | `special_requirements` | string[] | no | Special needs: `pet_friendly`, `medical_staff`, `full_ada` |
@@ -84,7 +84,7 @@ List all incidents.
       "type": "hurricane",
       "severity": "high",
       "status": "active",
-      "location": "Austin, TX",
+      "location": "Tampa, FL",
       "description": "Category 3 hurricane...",
       "affected_population": 15000,
       "created_at": "2026-03-28T10:00:00Z",
@@ -108,7 +108,7 @@ Get full incident details including response plan.
   "type": "hurricane",
   "severity": "high",
   "status": "active",
-  "location": "Austin, TX",
+  "location": "Tampa, FL",
   "description": "Category 3 hurricane...",
   "affected_population": 15000,
   "created_at": "2026-03-28T10:00:00Z",

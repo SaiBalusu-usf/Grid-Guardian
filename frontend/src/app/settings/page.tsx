@@ -29,8 +29,9 @@ export default function SettingsPage() {
 
   async function checkHealth() {
     setHealthStatus('checking');
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
     try {
-      const res = await fetch('/api/dashboard', { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(`${base}/health`, { signal: AbortSignal.timeout(5000) });
       setHealthStatus(res.ok ? 'online' : 'offline');
     } catch {
       setHealthStatus('offline');
@@ -40,8 +41,10 @@ export default function SettingsPage() {
   async function handleClear() {
     if (!confirm('Clear all simulation data? This cannot be undone.')) return;
     setClearing(true);
-    // Simulate clearing
-    await new Promise((r) => setTimeout(r, 1000));
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
+    try {
+      await fetch(`${base}/api/clear`, { method: 'POST' });
+    } catch { /* ignore */ }
     setClearing(false);
   }
 

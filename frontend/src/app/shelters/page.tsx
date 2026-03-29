@@ -98,12 +98,11 @@ export default function SheltersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Try to load from API first, fallback to mock data
-    const timer = setTimeout(() => {
-      setShelters(MOCK_SHELTERS);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    const BASE = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${BASE}/api/shelters`)
+      .then((r) => r.ok ? r.json() : Promise.reject('API error'))
+      .then((data) => { setShelters(data); setLoading(false); })
+      .catch(() => { setShelters(MOCK_SHELTERS); setLoading(false); });
   }, []);
 
   const totalCapacity = shelters.reduce((sum, s) => sum + s.capacity, 0);

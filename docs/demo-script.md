@@ -37,12 +37,12 @@ Timing: 30s introduction | 60s live demo | 30s architecture walkthrough
 
 **Click the "Simulate Incident" button on the dashboard.**
 
-> "Let me simulate a Category 3 hurricane hitting Austin. I'm setting severity to high, with 15,000 affected people."
+> "Let me simulate a Category 3 hurricane hitting Tampa. I'm setting severity to high, with 15,000 affected people."
 
 **Select:**
 - Scenario: Hurricane
 - Severity: High
-- Location: Austin, TX
+- Location: Tampa, FL
 
 **Click "Start Simulation."**
 

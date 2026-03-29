@@ -48,11 +48,11 @@ def sample_incident() -> dict[str, Any]:
         "type": "hurricane",
         "severity": "high",
         "location": {
-            "city": "Austin",
+            "city": "Tampa",
             "state": "TX",
             "coordinates": {"lat": 30.2672, "lng": -97.7431},
         },
-        "description": "Category 3 hurricane approaching Austin metro area",
+        "description": "Category 3 hurricane approaching Tampa metro area",
         "status": "active",
         "affected_population": 15000,
         "created_at": "2026-03-28T10:00:00Z",
@@ -74,7 +74,7 @@ def sample_scenario() -> dict[str, Any]:
     return {
         "scenario_type": "hurricane",
         "severity": "high",
-        "location": "Austin, TX",
+        "location": "Tampa, FL",
         "description": "Category 3 hurricane with 120mph winds, expected landfall in 6 hours",
         "affected_population": 15000,
         "special_requirements": ["pet_friendly", "medical_staff"],
