@@ -10,6 +10,7 @@ import {
   Bell,
   ListTodo,
   Building2,
+  BarChart3,
   Settings,
   Radio,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
   { href: '/shelters', label: 'Shelters', icon: Building2 },
+  { href: '/metrics', label: 'Metrics', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

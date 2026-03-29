@@ -20,6 +20,7 @@ import {
 import { useIncident, useTrace, useTasks, useAlerts, useDashboard, useStreaming } from '@/lib/hooks';
 import { cn, severityColor, formatConfidence, statusBadgeClasses, severityBg } from '@/lib/utils';
 import IncidentBanner from '@/components/IncidentBanner';
+import WorkflowProgress from '@/components/WorkflowProgress';
 import AgentStatusCard from '@/components/AgentStatusCard';
 import TraceTimeline from '@/components/TraceTimeline';
 import type { AgentStatus } from '@/lib/types';
@@ -136,6 +137,9 @@ function DashboardContent() {
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Incident Banner */}
       {incident && <IncidentBanner incident={incident} />}
+
+      {/* Workflow Progress */}
+      <WorkflowProgress currentStage={incident?.status || 'initiated'} />
 
       {!incident && !incidentId && (
         <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 p-8 text-center">
