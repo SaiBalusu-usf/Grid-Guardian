@@ -26,6 +26,7 @@ export default function StreamingProvider({ children }: { children: React.ReactN
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptRef = useRef(0);
 
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -39,18 +40,22 @@ export default function StreamingProvider({ children }: { children: React.ReactN
 
       es.onopen = () => {
         setConnected(true);
+        reconnectAttemptRef.current = 0;
       };
 
       es.addEventListener('heartbeat', () => {
         setConnected(true);
+        reconnectAttemptRef.current = 0;
       });
 
       es.onerror = () => {
         setConnected(false);
         es.close();
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000);
+        reconnectAttemptRef.current += 1;
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
-        }, 3000);
+        }, delay);
       };
 
       es.addEventListener('incident_update', (e) => {

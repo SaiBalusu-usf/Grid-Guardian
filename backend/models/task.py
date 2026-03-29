@@ -1,5 +1,6 @@
 """Task model representing an actionable work item assigned during incident response."""
 
+from typing import Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -10,8 +11,8 @@ class Task(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     incident_id: str
-    title: str
-    priority: str = "medium"  # low/medium/high/critical
+    title: str = Field(min_length=1, max_length=500)
+    priority: Literal["low", "medium", "high", "critical"] = "medium"
     location: str = ""
-    assignee_type: str = "crew"  # crew/volunteer/medical/logistics/shelter
-    status: str = "pending"  # pending/in_progress/completed/cancelled
+    assignee_type: Literal["crew", "volunteer", "medical", "logistics", "shelter"] = "crew"
+    status: Literal["pending", "in_progress", "completed", "cancelled"] = "pending"

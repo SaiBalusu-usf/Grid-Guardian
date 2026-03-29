@@ -100,11 +100,14 @@ async def run_incident_workflow(scenario: dict, stream_manager: StreamManager) -
             "region": scenario.get("region", "Central Region"),
         }
 
-        hazard_result, vuln_result, route_result, resource_result = await asyncio.gather(
-            _run_agent_tracked(incident.id, "hazard_watcher", run_hazard_watcher, base_scenario, stream_manager),
-            _run_agent_tracked(incident.id, "vulnerability_mapper", run_vulnerability_mapper, base_scenario, stream_manager),
-            _run_agent_tracked(incident.id, "route_planner", run_route_planner, base_scenario, stream_manager),
-            _run_agent_tracked(incident.id, "resource_coordinator", run_resource_coordinator, base_scenario, stream_manager),
+        hazard_result, vuln_result, route_result, resource_result = await asyncio.wait_for(
+            asyncio.gather(
+                _run_agent_tracked(incident.id, "hazard_watcher", run_hazard_watcher, base_scenario, stream_manager),
+                _run_agent_tracked(incident.id, "vulnerability_mapper", run_vulnerability_mapper, base_scenario, stream_manager),
+                _run_agent_tracked(incident.id, "route_planner", run_route_planner, base_scenario, stream_manager),
+                _run_agent_tracked(incident.id, "resource_coordinator", run_resource_coordinator, base_scenario, stream_manager),
+            ),
+            timeout=90.0,
         )
 
         # Update incident with hazard findings

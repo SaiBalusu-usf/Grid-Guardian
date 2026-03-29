@@ -1,13 +1,17 @@
 """GridGuardian FastAPI application -- multi-agent disaster response backend."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sse_starlette.sse import EventSourceResponse
 
 from backend.config import settings
@@ -25,13 +29,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gridguardian")
 
+# ---------------------------------------------------------------------------
+# Rate limiter
+# ---------------------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address)
+
 
 # ---------------------------------------------------------------------------
 # Lifespan
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    """Application lifespan: startup and shutdown hooks."""
     logger.info("GridGuardian starting (mock=%s, sse=%s)", settings.is_mock, settings.is_sse_enabled)
     yield
     logger.info("GridGuardian shutting down, cancelling active workflows")
@@ -48,22 +56,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS -- allow all for dev
+app.state.limiter = limiter
+
+# CORS -- restrict in production, allow-all in dev
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 # ---------------------------------------------------------------------------
-# Error handling middleware
+# Error handlers
 # ---------------------------------------------------------------------------
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"error": "rate_limit_exceeded", "detail": "Too many requests. Please slow down."},
+    )
+
+
 @app.middleware("http")
 async def error_handling_middleware(request: Request, call_next):
-    """Catch unhandled exceptions and return structured JSON errors."""
     try:
         response = await call_next(request)
         return response
@@ -79,8 +97,12 @@ async def error_handling_middleware(request: Request, call_next):
 # Request / Response models
 # ---------------------------------------------------------------------------
 class SimulateRequest(BaseModel):
-    scenario: str
-    trigger_source: str = "simulation"
+    scenario: str = Field(min_length=1, max_length=2000, description="Disaster scenario description")
+    trigger_source: str = Field(default="simulation", max_length=100)
+
+
+class TaskStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(pending|in_progress|completed|cancelled)$")
 
 
 class AckResponse(BaseModel):
@@ -93,7 +115,6 @@ class AckResponse(BaseModel):
 # ---------------------------------------------------------------------------
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
     return {
         "status": "ok",
         "service": "gridguardian-backend",
@@ -107,18 +128,19 @@ async def health():
 # Incidents
 # ---------------------------------------------------------------------------
 @app.post("/api/incidents/simulate")
-async def simulate_incident(body: SimulateRequest):
-    """Start a new incident simulation workflow.
-
-    Returns immediately with the incident stub; the workflow runs in the background.
-    """
+@limiter.limit("20/minute")
+async def simulate_incident(body: SimulateRequest, request: Request):
     result = await start_workflow(body.model_dump())
     return result
 
 
+@app.get("/api/incidents")
+async def list_incidents():
+    return await fs.list_incidents()
+
+
 @app.get("/api/incidents/{incident_id}")
 async def get_incident(incident_id: str):
-    """Retrieve a single incident by ID."""
     incident = await fs.get_incident(incident_id)
     if incident is None:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
@@ -127,9 +149,22 @@ async def get_incident(incident_id: str):
 
 @app.get("/api/incidents/{incident_id}/trace")
 async def get_incident_trace(incident_id: str):
-    """Retrieve all trace events for an incident, sorted by timestamp."""
     traces = await fs.get_traces(incident_id)
     return [t.model_dump() for t in traces]
+
+
+@app.post("/api/incidents/{incident_id}/cancel")
+@limiter.limit("10/minute")
+async def cancel_incident(incident_id: str, request: Request):
+    incident = await fs.get_incident(incident_id)
+    if incident is None:
+        raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
+    await fs.update_incident(incident_id, {"status": "cancelled"})
+    await stream_manager.broadcast("incident_update", {
+        "incident_id": incident_id,
+        "status": "cancelled",
+    })
+    return {"incident_id": incident_id, "status": "cancelled"}
 
 
 # ---------------------------------------------------------------------------
@@ -137,9 +172,18 @@ async def get_incident_trace(incident_id: str):
 # ---------------------------------------------------------------------------
 @app.get("/api/tasks")
 async def get_tasks(incident_id: str | None = Query(default=None)):
-    """Retrieve tasks, optionally filtered by incident_id."""
     tasks = await fs.get_tasks(incident_id)
     return [t.model_dump() for t in tasks]
+
+
+@app.patch("/api/tasks/{task_id}")
+async def update_task_status(task_id: str, body: TaskStatusUpdate):
+    try:
+        task = await fs.update_task(task_id, {"status": body.status})
+        await stream_manager.broadcast("task_update", task.model_dump())
+        return task.model_dump()
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -147,14 +191,12 @@ async def get_tasks(incident_id: str | None = Query(default=None)):
 # ---------------------------------------------------------------------------
 @app.get("/api/alerts")
 async def get_alerts(incident_id: str | None = Query(default=None)):
-    """Retrieve alerts, optionally filtered by incident_id."""
     alerts = await fs.get_alerts(incident_id)
     return [a.model_dump() for a in alerts]
 
 
 @app.post("/api/alerts/{alert_id}/ack")
 async def acknowledge_alert(alert_id: str):
-    """Acknowledge an alert."""
     try:
         alert = await fs.acknowledge_alert(alert_id)
         return AckResponse(alert_id=alert.id, status=alert.status)
@@ -163,39 +205,28 @@ async def acknowledge_alert(alert_id: str):
 
 
 # ---------------------------------------------------------------------------
-# Dashboard
-# ---------------------------------------------------------------------------
-@app.get("/api/dashboard")
-async def get_dashboard():
-    """Aggregated dashboard statistics."""
-    return await fs.get_dashboard_data()
-
-
-# ---------------------------------------------------------------------------
 # Shelters
 # ---------------------------------------------------------------------------
 @app.get("/api/shelters")
 async def get_shelters():
-    """Retrieve all shelters."""
     shelters = await fs.get_shelters()
     return [s.model_dump() for s in shelters]
 
 
 # ---------------------------------------------------------------------------
-# Incidents list
+# Dashboard
 # ---------------------------------------------------------------------------
-@app.get("/api/incidents")
-async def list_incidents():
-    """List all incidents (most recent first)."""
-    return await fs.list_incidents()
+@app.get("/api/dashboard")
+async def get_dashboard():
+    return await fs.get_dashboard_data()
 
 
 # ---------------------------------------------------------------------------
 # Clear data
 # ---------------------------------------------------------------------------
 @app.post("/api/clear")
-async def clear_data():
-    """Clear all simulation data (incidents, tasks, alerts, traces)."""
+@limiter.limit("5/hour")
+async def clear_data(request: Request):
     await fs.clear_all()
     return {"status": "cleared"}
 
@@ -205,8 +236,6 @@ async def clear_data():
 # ---------------------------------------------------------------------------
 @app.get("/api/stream")
 async def sse_stream(request: Request):
-    """Server-sent events endpoint for real-time updates."""
-
     async def event_generator() -> AsyncGenerator:
         async for event in stream_manager.subscribe():
             if await request.is_disconnected():

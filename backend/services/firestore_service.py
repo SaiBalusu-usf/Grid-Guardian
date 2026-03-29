@@ -159,6 +159,15 @@ async def get_tasks(incident_id: str | None = None) -> list[Task]:
     return [Task(**d) for d in docs]
 
 
+async def update_task(task_id: str, updates: dict) -> Task:
+    """Update fields on a task."""
+    await update_document(COL_TASKS, task_id, updates)
+    doc = await read_document(COL_TASKS, task_id)
+    if doc is None:
+        raise ValueError(f"Task {task_id} not found")
+    return Task(**doc)
+
+
 # ---------------------------------------------------------------------------
 # Alerts
 # ---------------------------------------------------------------------------

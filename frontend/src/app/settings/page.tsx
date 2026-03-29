@@ -18,13 +18,13 @@ import DemoScenarios from '@/components/DemoScenarios';
 
 export default function SettingsPage() {
   const { connected } = useStreaming();
-  const [backendUrl, setBackendUrl] = useState('http://localhost:8000');
-  const [mockMode, setMockMode] = useState(false);
   const [healthStatus, setHealthStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     checkHealth();
+    const interval = setInterval(checkHealth, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   async function checkHealth() {

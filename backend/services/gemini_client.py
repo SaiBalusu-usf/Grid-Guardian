@@ -17,6 +17,7 @@ def _get_client():
     global _client
     if _client is None:
         if not settings.GEMINI_API_KEY:
+            logger.warning("GEMINI_API_KEY not set — LLM features disabled, using fallback logic")
             return None
         try:
             import google.genai as genai

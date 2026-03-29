@@ -248,11 +248,11 @@ function DashboardContent() {
       {/* Quick Links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { href: incidentId ? `/map?incident=${incidentId}` : '/map', icon: Map, label: 'Operations Map', color: 'emerald' },
-          { href: incidentId ? `/trace?incident=${incidentId}` : '/trace', icon: Activity, label: 'Full Trace', color: 'blue' },
-          { href: incidentId ? `/alerts?incident=${incidentId}` : '/alerts', icon: Bell, label: 'Alert Center', color: 'amber' },
-          { href: incidentId ? `/tasks?incident=${incidentId}` : '/tasks', icon: ListTodo, label: 'Task Board', color: 'purple' },
-        ].map(({ href, icon: Icon, label, color }) => (
+          { href: incidentId ? `/map?incident=${incidentId}` : '/map', icon: Map, label: 'Operations Map', iconColor: 'text-emerald-400' },
+          { href: incidentId ? `/trace?incident=${incidentId}` : '/trace', icon: Activity, label: 'Full Trace', iconColor: 'text-blue-400' },
+          { href: incidentId ? `/alerts?incident=${incidentId}` : '/alerts', icon: Bell, label: 'Alert Center', iconColor: 'text-amber-400' },
+          { href: incidentId ? `/tasks?incident=${incidentId}` : '/tasks', icon: ListTodo, label: 'Task Board', iconColor: 'text-purple-400' },
+        ].map(({ href, icon: Icon, label, iconColor }) => (
           <Link
             key={label}
             href={href}
@@ -260,7 +260,7 @@ function DashboardContent() {
               'flex items-center gap-3 p-3.5 rounded-xl border border-slate-700/50 bg-slate-800/40 transition-all duration-200 hover:bg-slate-800/70 hover:border-slate-600/50 group'
             )}
           >
-            <Icon className={cn('h-5 w-5', `text-${color}-400`)} />
+            <Icon className={cn('h-5 w-5', iconColor)} />
             <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
               {label}
             </span>
