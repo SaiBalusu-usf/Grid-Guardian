@@ -9,6 +9,8 @@ from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
+HEARTBEAT_INTERVAL = 15  # seconds — keeps Cloud Run / proxies from killing the connection
+
 # Valid event types
 EVENT_TYPES = frozenset({
     "incident_update",
@@ -17,6 +19,7 @@ EVENT_TYPES = frozenset({
     "alert_update",
     "trace_event",
     "plan_update",
+    "heartbeat",
 })
 
 
@@ -34,18 +37,31 @@ class StreamManager:
     async def subscribe(self) -> AsyncGenerator[dict, None]:
         """Yield SSE-formatted events for a single client connection.
 
-        Yields:
-            Dicts with "event" and "data" keys suitable for sse-starlette.
+        Sends an immediate heartbeat on connect, then periodic heartbeats
+        to keep the connection alive through Cloud Run / reverse proxies.
         """
         queue: asyncio.Queue = asyncio.Queue(maxsize=256)
         async with self._lock:
             self._subscribers.append(queue)
         logger.info("SSE client connected (total=%d)", len(self._subscribers))
 
+        # Send immediate connection event so Cloud Run returns headers
+        yield {
+            "event": "heartbeat",
+            "data": json.dumps({"status": "connected", "interval": HEARTBEAT_INTERVAL}),
+        }
+
         try:
             while True:
-                event = await queue.get()
-                yield event
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_INTERVAL)
+                    yield event
+                except asyncio.TimeoutError:
+                    # Send periodic heartbeat to keep connection alive
+                    yield {
+                        "event": "heartbeat",
+                        "data": json.dumps({"status": "alive"}),
+                    }
         except asyncio.CancelledError:
             pass
         finally:

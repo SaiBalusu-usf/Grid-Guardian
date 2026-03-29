@@ -41,6 +41,10 @@ export default function StreamingProvider({ children }: { children: React.ReactN
         setConnected(true);
       };
 
+      es.addEventListener('heartbeat', () => {
+        setConnected(true);
+      });
+
       es.onerror = () => {
         setConnected(false);
         es.close();
