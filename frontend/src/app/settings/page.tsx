@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Settings,
   Server,
-  ToggleLeft,
-  ToggleRight,
   Trash2,
   CheckCircle,
   AlertCircle,
@@ -106,43 +104,13 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* Backend Config */}
+      {/* System Info */}
       <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 p-5">
-        <h2 className="text-sm font-semibold text-white mb-4">Backend Configuration</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-slate-400 mb-1.5">API Base URL</label>
-            <input
-              type="text"
-              value={backendUrl}
-              onChange={(e) => setBackendUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700/50 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50"
-              placeholder="http://localhost:8000"
-            />
-            <p className="text-[10px] text-slate-600 mt-1">
-              The Next.js rewrite proxy forwards /api/* to this URL automatically.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/40 border border-slate-700/30">
-            <div>
-              <p className="text-xs font-medium text-white">Mock Mode</p>
-              <p className="text-[10px] text-slate-500">
-                Use simulated responses when the backend is unavailable
-              </p>
-            </div>
-            <button
-              onClick={() => setMockMode(!mockMode)}
-              className="text-slate-400 hover:text-white transition-colors"
-            >
-              {mockMode ? (
-                <ToggleRight className="h-7 w-7 text-emerald-400" />
-              ) : (
-                <ToggleLeft className="h-7 w-7" />
-              )}
-            </button>
-          </div>
+        <h2 className="text-sm font-semibold text-white mb-4">System Information</h2>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between"><span className="text-slate-400">Backend URL</span><span className="text-slate-200 font-mono">{process.env.NEXT_PUBLIC_API_URL || 'localhost:8000'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">SSE Stream</span><span className={connected ? 'text-emerald-400' : 'text-red-400'}>{connected ? 'Connected' : 'Disconnected'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">Location</span><span className="text-slate-200">Tampa, FL</span></div>
         </div>
       </div>
 
