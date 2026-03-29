@@ -1,7 +1,10 @@
 """Audit agent: critiques action plans for safety, completeness, and equity."""
 
+import json
 import logging
 from datetime import datetime
+
+from backend.services.gemini_client import generate_json
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +41,26 @@ async def run_audit(plan: dict, incident_id: str | None = None) -> dict:
     issues: list[dict] = []
     corrections: list[dict] = []
 
-    # Always run real checks
+    # Always run rule-based checks
     _check_missing_evidence(plan, issues, corrections)
     _check_unsafe_assumptions(plan, issues, corrections)
     _check_vulnerable_populations(plan, issues, corrections)
     _check_vague_alerts(plan, issues, corrections)
     _check_route_contradictions(plan, issues, corrections)
     _check_resource_adequacy(plan, issues, corrections)
+
+    # LLM-enhanced audit (supplements rule-based checks)
+    llm_issues = await _llm_audit(plan, call_number)
+    if llm_issues:
+        for li in llm_issues:
+            if not any(i["description"] == li.get("description") for i in issues):
+                issues.append(li)
+                if li.get("correction"):
+                    corrections.append({
+                        "for_issue": li.get("category", "llm_audit"),
+                        "correction": li["correction"],
+                        "priority": li.get("severity", "major"),
+                    })
 
     # On first call, ensure at least one issue exists for demo purposes
     if call_number == 1 and not issues:
@@ -279,3 +295,41 @@ def _check_resource_adequacy(plan: dict, issues: list, corrections: list) -> Non
             "correction": "Increase crew allocation to at least 8 units for high/critical incidents. Request mutual aid if needed.",
             "priority": "high",
         })
+
+
+async def _llm_audit(plan: dict, iteration: int) -> list[dict]:
+    """Use Gemini to find issues that rule-based checks might miss."""
+    plan_summary = json.dumps({
+        "actions": plan.get("actions", [])[:8],
+        "tasks": plan.get("tasks", [])[:5],
+        "alerts": plan.get("alerts", [])[:4],
+        "severity": plan.get("severity"),
+        "confidence": plan.get("confidence"),
+        "notes": plan.get("notes", [])[:5],
+    }, default=str)
+
+    prompt = f"""You are a disaster response plan auditor (iteration {iteration}).
+Analyze this emergency action plan and find 1-3 critical issues.
+
+Plan:
+{plan_summary}
+
+Return a JSON array of issues. Each issue must have:
+- "category": one of "safety", "equity", "logistics", "communication", "resource_gap"
+- "description": specific problem found (1-2 sentences)
+- "severity": "critical", "major", or "minor"
+- "affected_section": "actions", "tasks", "alerts", or "resource_allocations"
+- "correction": specific fix recommendation (1 sentence)
+
+{"Find real problems on first review." if iteration == 1 else "Verify corrections were applied. Return empty array [] if plan is now adequate."}"""
+
+    result = await generate_json(
+        prompt,
+        system_instruction="You are an expert emergency management auditor. Be specific and actionable. Return valid JSON array only.",
+    )
+
+    if isinstance(result, list):
+        return result
+    if isinstance(result, dict) and "issues" in result:
+        return result["issues"]
+    return []

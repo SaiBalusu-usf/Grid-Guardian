@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """GridGuardian backend configuration."""
 
     GOOGLE_CLOUD_PROJECT: str = Field(
-        default="grid-guardian-dev",
+        default="gridguardian-491621",
         description="Google Cloud project ID",
     )
     FIRESTORE_EMULATOR_HOST: str = Field(

@@ -87,6 +87,65 @@ def _mock_routes(origin: str, destination: str, avoid_zones: list[str]) -> dict:
 
 
 async def _live_routes(origin: str, destination: str, avoid_zones: list[str]) -> dict:
-    """Placeholder for real routing API integration."""
-    logger.warning("Live routing API not configured, falling back to mock")
-    return _mock_routes(origin, destination, avoid_zones)
+    """Fetch routes from OSRM (free, no API key).
+
+    Uses the public OSRM demo server for routing.
+    Falls back to mock if the API is unreachable.
+    """
+    import httpx
+
+    # Map location names to Austin-area coordinates for demo
+    _COORDS = {
+        "emergency operations center": (-97.7431, 30.2672),
+        "zone a - riverside district": (-97.7500, 30.2450),
+        "zone b - medical district": (-97.7384, 30.3119),
+        "zone a - oak valley": (-97.7600, 30.2750),
+        "fire station 7": (-97.7200, 30.2900),
+        "supply depot": (-97.7100, 30.2600),
+        "metro convention center": (-97.7480, 30.2450),
+    }
+
+    origin_coords = _COORDS.get(origin.lower(), (-97.7431, 30.2672))
+    dest_coords = _COORDS.get(destination.lower(), (-97.7500, 30.2500))
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            url = (
+                f"https://router.project-osrm.org/route/v1/driving/"
+                f"{origin_coords[0]},{origin_coords[1]};"
+                f"{dest_coords[0]},{dest_coords[1]}"
+                f"?overview=full&alternatives=true&steps=false"
+            )
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+
+        routes = []
+        for i, route in enumerate(data.get("routes", [])[:3]):
+            distance_mi = round(route["distance"] / 1609.34, 1)
+            time_min = round(route["duration"] / 60)
+            risk = "low" if not avoid_zones else ("high" if i > 0 else "medium")
+            routes.append({
+                "route_id": f"OSRM-{i+1:03d}",
+                "name": f"Route {chr(65+i)} ({distance_mi} mi)",
+                "distance_mi": distance_mi,
+                "estimated_time_min": time_min,
+                "risk_level": risk,
+                "closures": [],
+                "detours": [],
+            })
+
+        result = {
+            "routes": routes if routes else _mock_routes(origin, destination, avoid_zones)["routes"],
+            "recommended_route_id": routes[0]["route_id"] if routes else "R-A",
+            "origin": origin,
+            "destination": destination,
+            "source": "osrm" if routes else "mock_fallback",
+            "retrieved_at": datetime.utcnow().isoformat(),
+        }
+        logger.info("Live routes: %s -> %s (%d routes from OSRM)", origin, destination, len(routes))
+        return result
+
+    except Exception as exc:
+        logger.warning("OSRM routing failed (%s), falling back to mock", exc)
+        return _mock_routes(origin, destination, avoid_zones)

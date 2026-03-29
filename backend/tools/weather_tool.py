@@ -97,36 +97,75 @@ def _mock_weather(location: str, scenario: str) -> dict:
 
 
 async def _live_weather(location: str, scenario: str) -> dict:
-    """Call an external weather API with retry logic."""
-    max_retries = 2
-    last_error: Exception | None = None
+    """Fetch real weather from NWS API (free, no key).
 
-    for attempt in range(max_retries):
+    1. Get grid point from NWS points endpoint (Austin, TX coords)
+    2. Fetch forecast from the grid endpoint
+    3. Also fetch active alerts
+    Falls back to mock on failure.
+    """
+    # Austin, TX coordinates — in production, geocode the location
+    lat, lon = 30.2672, -97.7431
+    headers = {"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"}
+
+    for attempt in range(2):
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    "https://api.weather.gov/points/39.7456,-97.0892",
-                    headers={"User-Agent": "GridGuardian/1.0"},
+                # Get grid info
+                points_resp = await client.get(
+                    f"https://api.weather.gov/points/{lat},{lon}",
+                    headers=headers,
                 )
-                resp.raise_for_status()
-                raw = resp.json()
+                points_resp.raise_for_status()
+                props = points_resp.json().get("properties", {})
+                forecast_url = props.get("forecast", "")
+
+                # Get forecast
+                condition = "unknown"
+                wind_mph = 0
+                temperature_f = 0
+                precipitation = "unknown"
+                if forecast_url:
+                    fc_resp = await client.get(forecast_url, headers=headers)
+                    fc_resp.raise_for_status()
+                    periods = fc_resp.json().get("properties", {}).get("periods", [])
+                    if periods:
+                        p = periods[0]
+                        condition = p.get("shortForecast", "unknown")
+                        temperature_f = p.get("temperature", 0)
+                        wind_mph = int("".join(c for c in p.get("windSpeed", "0") if c.isdigit()) or "0")
+                        precipitation = p.get("detailedForecast", "")[:200]
+
+                # Get active alerts
+                alerts_resp = await client.get(
+                    f"https://api.weather.gov/alerts/active",
+                    params={"point": f"{lat},{lon}"},
+                    headers=headers,
+                )
+                alert_texts = []
+                if alerts_resp.status_code == 200:
+                    for feat in alerts_resp.json().get("features", [])[:5]:
+                        headline = feat.get("properties", {}).get("headline", "")
+                        if headline:
+                            alert_texts.append(headline)
+
+                severity = "critical" if len(alert_texts) >= 3 else "high" if alert_texts else "medium" if wind_mph > 30 else "low"
+                confidence = 0.85 if alert_texts else 0.7
+
                 return {
-                    "condition": raw.get("properties", {}).get("forecast", "Unknown"),
-                    "severity": "high",
-                    "wind_mph": 0,
-                    "precipitation": "unknown",
-                    "temperature_f": 0,
-                    "alerts": [],
-                    "confidence": 0.5,
+                    "condition": condition,
+                    "severity": severity,
+                    "wind_mph": wind_mph,
+                    "precipitation": precipitation,
+                    "temperature_f": temperature_f,
+                    "alerts": alert_texts,
+                    "confidence": confidence,
                     "location": location,
+                    "source": "weather.gov",
                     "retrieved_at": datetime.utcnow().isoformat(),
-                    "raw_source": "weather.gov",
                 }
         except Exception as exc:
-            last_error = exc
-            logger.warning(
-                "Weather API attempt %d/%d failed: %s", attempt + 1, max_retries, exc
-            )
+            logger.warning("Weather API attempt %d/2 failed: %s", attempt + 1, exc)
 
     logger.error("Weather API exhausted retries, falling back to mock")
     return _mock_weather(location, scenario)

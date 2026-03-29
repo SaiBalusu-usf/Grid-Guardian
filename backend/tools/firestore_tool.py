@@ -31,9 +31,11 @@ def _get_client() -> Any:
     try:
         from google.cloud import firestore as _firestore_lib
 
+        import os
         if settings.FIRESTORE_EMULATOR_HOST:
-            import os
             os.environ["FIRESTORE_EMULATOR_HOST"] = settings.FIRESTORE_EMULATOR_HOST
+        else:
+            os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
 
         _firestore_client = _firestore_lib.Client(project=settings.GOOGLE_CLOUD_PROJECT)
         # Quick connectivity test

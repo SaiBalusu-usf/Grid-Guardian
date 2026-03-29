@@ -145,6 +145,51 @@ def _mock_news(query: str, scenario: str) -> dict:
 
 
 async def _live_news(query: str, scenario: str) -> dict:
-    """Placeholder for real news API integration."""
-    logger.warning("Live news API not configured, falling back to mock")
-    return _mock_news(query, scenario)
+    """Fetch real news from GDELT DOC API (free, no key required).
+
+    Falls back to mock if the API is unreachable.
+    """
+    import httpx
+
+    try:
+        search_terms = query.replace(",", " ")[:100]
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://api.gdeltproject.org/api/v2/doc/doc",
+                params={
+                    "query": search_terms,
+                    "mode": "ArtList",
+                    "maxrecords": "5",
+                    "format": "json",
+                    "sort": "DateDesc",
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        now = datetime.utcnow()
+        articles = []
+        for i, art in enumerate(data.get("articles", [])[:5]):
+            articles.append({
+                "title": art.get("title", "Untitled")[:150],
+                "source": art.get("domain", "Unknown"),
+                "summary": art.get("seendate", ""),
+                "relevance_score": round(0.95 - i * 0.05, 2),
+                "timestamp": art.get("seendate", now.isoformat()),
+                "url": art.get("url", ""),
+            })
+
+        if not articles:
+            return _mock_news(query, scenario)
+
+        logger.info("Live news: %d articles from GDELT for '%s'", len(articles), search_terms[:40])
+        return {
+            "articles": articles,
+            "query": query,
+            "source": "gdelt",
+            "retrieved_at": now.isoformat(),
+        }
+
+    except Exception as exc:
+        logger.warning("GDELT news API failed (%s), falling back to mock", exc)
+        return _mock_news(query, scenario)

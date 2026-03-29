@@ -150,6 +150,53 @@ def _mock_hazards(region: str, scenario: str) -> dict:
 
 
 async def _live_hazards(region: str, scenario: str) -> dict:
-    """Placeholder for real hazard API integration."""
-    logger.warning("Live hazard API not configured, falling back to mock")
-    return _mock_hazards(region, scenario)
+    """Fetch real hazard data from NOAA NWS alerts API.
+
+    Uses the NWS active alerts endpoint which is free and requires no API key.
+    Falls back to mock if the API is unreachable.
+    """
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # NWS active alerts for Texas (area=TX) — adjust for real deployment
+            resp = await client.get(
+                "https://api.weather.gov/alerts/active",
+                params={"area": "TX", "severity": "Severe,Extreme"},
+                headers={"User-Agent": "GridGuardian/1.0 (disaster-response-demo)"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        features = data.get("features", [])
+        zones = []
+        for i, feat in enumerate(features[:5]):
+            props = feat.get("properties", {})
+            severity_map = {"Extreme": "critical", "Severe": "high", "Moderate": "medium"}
+            zones.append({
+                "zone_id": f"NWS-{i+1:03d}",
+                "type": props.get("event", "unknown").lower().replace(" ", "_"),
+                "risk_level": severity_map.get(props.get("severity", ""), "medium"),
+                "affected_area_sq_mi": 15.0,  # NWS doesn't provide area directly
+                "population_estimate": 30000,  # would need census data for real estimate
+                "description": (props.get("headline", "") or "")[:200],
+                "nws_id": props.get("id", ""),
+            })
+
+        has_flood = any("flood" in z["type"] for z in zones)
+        has_extreme = any(z["risk_level"] == "critical" for z in zones)
+
+        result = {
+            "zones": zones if zones else _DEFAULT_MOCK["zones"],
+            "flood_stage": "major" if has_flood else "none",
+            "evacuation_recommended": has_extreme,
+            "region": region,
+            "source": "nws_api" if zones else "mock_fallback",
+            "retrieved_at": datetime.utcnow().isoformat(),
+        }
+        logger.info("Live hazard data: %d zones from NWS", len(zones))
+        return result
+
+    except Exception as exc:
+        logger.warning("NWS hazard API failed (%s), falling back to mock", exc)
+        return _mock_hazards(region, scenario)

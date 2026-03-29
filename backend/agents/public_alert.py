@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime
 
+from backend.services.gemini_client import generate_json
+
 logger = logging.getLogger(__name__)
 
 # Alert templates by severity
@@ -74,6 +76,21 @@ async def run_public_alert(scenario: dict) -> dict:
     recommendations = scenario.get("recommendations", [])
     shelters = scenario.get("shelters", [])
 
+    # Try LLM-generated alerts first
+    llm_alerts = await _llm_generate_alerts(scenario)
+    if llm_alerts:
+        logger.info("Using LLM-generated alerts (%d total)", len(llm_alerts))
+        return {
+            "alerts": llm_alerts,
+            "total_alerts": len(llm_alerts),
+            "languages": ["en", "es"],
+            "regions_covered": impacted_zones or ["Metro Area"],
+            "source": "gemini",
+            "drafted_at": datetime.utcnow().isoformat(),
+        }
+
+    # Fallback: template-based alerts
+    logger.info("Using template-based alerts (Gemini unavailable)")
     # Determine hazard type from scenario text
     hazard_type = _infer_hazard_type(scenario_text)
 
@@ -158,6 +175,43 @@ async def run_public_alert(scenario: dict) -> dict:
         len(alerts), len(regions),
     )
     return result
+
+
+async def _llm_generate_alerts(scenario: dict) -> list[dict] | None:
+    """Use Gemini to draft contextual bilingual alerts."""
+    zones = scenario.get("impacted_zones", ["Metro Area"])
+    shelters = scenario.get("shelters", [])
+    shelter_names = ", ".join(s.get("name", "Shelter") for s in shelters[:3]) or "Local emergency shelters"
+
+    prompt = f"""Draft emergency public alerts for this disaster scenario.
+
+Scenario: {scenario.get("scenario", "Unknown emergency")}
+Severity: {scenario.get("severity", "high")}
+Affected zones: {", ".join(zones)}
+Available shelters: {shelter_names}
+
+Create alerts for each zone in BOTH English and Spanish.
+Also create one special-needs alert in each language.
+
+Return a JSON array where each alert has:
+- "message": the full alert text (2-4 sentences, clear, actionable)
+- "language": "en" or "es"
+- "severity": "{scenario.get("severity", "high")}"
+- "region": the zone name
+- "target_audience": "general_public" or "special_needs"
+
+Make alerts specific to the scenario, not generic. Include shelter names and 911 call instruction."""
+
+    result = await generate_json(
+        prompt,
+        system_instruction="You are a FEMA-certified emergency alert writer. Write clear, actionable, non-panicking alerts. Spanish alerts must be natural, not machine-translated.",
+    )
+
+    if isinstance(result, list) and len(result) >= 2:
+        return result
+    if isinstance(result, dict) and "alerts" in result:
+        return result["alerts"]
+    return None
 
 
 def _infer_hazard_type(scenario_text: str) -> str:
