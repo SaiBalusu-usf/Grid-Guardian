@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - USE_MOCK=true
+      - SHELTER_AGENT_URL=http://shelter-agent:8001
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-gridguardian-demo}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    depends_on:
+      - shelter-agent
+    networks:
+      - gridguardian
+
+  shelter-agent:
+    build: ./backend/a2a_shelter_agent
+    ports:
+      - "8001:8001"
+    networks:
+      - gridguardian
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - gridguardian
+
+networks:
+  gridguardian:
+    driver: bridge

@@ -1,0 +1,151 @@
+{
+  "shelters": [
+    {
+      "shelter_id": "SH-001",
+      "name": "Lincoln Community Center",
+      "address": "450 Lincoln Ave",
+      "capacity": 500,
+      "occupancy": 127,
+      "accessibility": "full_ada",
+      "supplies": {
+        "water_gallons": 800,
+        "cots": 350,
+        "first_aid_kits": 75,
+        "blankets": 400,
+        "mre_meals": 2000
+      },
+      "backup_power": true,
+      "medical_staff": true,
+      "pet_friendly": true,
+      "coordinates": { "lat": 30.2672, "lng": -97.7431 },
+      "status": "active",
+      "last_updated": "2026-03-28T10:00:00Z"
+    },
+    {
+      "shelter_id": "SH-002",
+      "name": "Eastside High School Gymnasium",
+      "address": "1200 E 12th St",
+      "capacity": 300,
+      "occupancy": 289,
+      "accessibility": "wheelchair",
+      "supplies": {
+        "water_gallons": 200,
+        "cots": 150,
+        "first_aid_kits": 20,
+        "blankets": 180,
+        "mre_meals": 600
+      },
+      "backup_power": false,
+      "medical_staff": false,
+      "pet_friendly": false,
+      "coordinates": { "lat": 30.275, "lng": -97.72 },
+      "status": "active",
+      "last_updated": "2026-03-28T10:00:00Z"
+    },
+    {
+      "shelter_id": "SH-003",
+      "name": "West Hills Church Fellowship Hall",
+      "address": "800 W 35th St",
+      "capacity": 200,
+      "occupancy": 45,
+      "accessibility": "standard",
+      "supplies": {
+        "water_gallons": 400,
+        "cots": 180,
+        "first_aid_kits": 40,
+        "blankets": 200,
+        "mre_meals": 1000
+      },
+      "backup_power": true,
+      "medical_staff": false,
+      "pet_friendly": true,
+      "coordinates": { "lat": 30.305, "lng": -97.76 },
+      "status": "active",
+      "last_updated": "2026-03-28T10:00:00Z"
+    },
+    {
+      "shelter_id": "SH-004",
+      "name": "Riverside Convention Center",
+      "address": "2000 S Congress Ave",
+      "capacity": 1000,
+      "occupancy": 312,
+      "accessibility": "full_ada",
+      "supplies": {
+        "water_gallons": 1500,
+        "cots": 800,
+        "first_aid_kits": 100,
+        "blankets": 900,
+        "mre_meals": 5000
+      },
+      "backup_power": true,
+      "medical_staff": true,
+      "pet_friendly": true,
+      "coordinates": { "lat": 30.245, "lng": -97.748 },
+      "status": "active",
+      "last_updated": "2026-03-28T10:00:00Z"
+    }
+  ],
+  "config": [
+    {
+      "doc_id": "app_settings",
+      "version": "1.0.0",
+      "default_region": "austin_metro",
+      "audit_max_retries": 2,
+      "sse_enabled": true,
+      "mock_mode": true,
+      "agent_timeout_seconds": 30,
+      "supported_scenarios": [
+        "hurricane",
+        "earthquake",
+        "flood",
+        "wildfire",
+        "power_outage",
+        "winter_storm"
+      ],
+      "alert_channels": ["dashboard", "email"],
+      "created_at": "2026-03-28T10:00:00Z"
+    }
+  ],
+  "resources": [
+    {
+      "resource_id": "RES-001",
+      "type": "generator",
+      "name": "Portable Generator 5kW",
+      "status": "available",
+      "location": "Central Warehouse",
+      "assigned_to": null,
+      "quantity": 12,
+      "last_updated": "2026-03-28T10:00:00Z"
+    },
+    {
+      "resource_id": "RES-002",
+      "type": "water_truck",
+      "name": "Water Tanker 2000gal",
+      "status": "deployed",
+      "location": "SH-002",
+      "assigned_to": "SH-002",
+      "quantity": 1,
+      "last_updated": "2026-03-28T09:30:00Z"
+    },
+    {
+      "resource_id": "RES-003",
+      "type": "medical_kit",
+      "name": "Trauma Kit Advanced",
+      "status": "available",
+      "location": "Central Warehouse",
+      "assigned_to": null,
+      "quantity": 50,
+      "last_updated": "2026-03-28T10:00:00Z"
+    },
+    {
+      "resource_id": "RES-004",
+      "type": "cots",
+      "name": "Emergency Cot Pallet (50 units)",
+      "status": "in_transit",
+      "location": "en route to SH-002",
+      "assigned_to": "SH-002",
+      "quantity": 3,
+      "last_updated": "2026-03-28T09:45:00Z"
+    }
+  ]
+}
