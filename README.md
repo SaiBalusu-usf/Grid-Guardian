@@ -2,7 +2,7 @@
 
 **Autonomous multi-agent disaster response platform powered by Google ADK, Gemini 3.1 Pro, and real-time data.**
 
-GridGuardian orchestrates 7 specialized AI agents in parallel to detect hazards, assess vulnerabilities, plan routes, coordinate resources, and produce audited response plans — all streamed live to an operations dashboard.
+GridGuardian v2 orchestrates 7 specialized AI agents using real Google ADK primitives (LlmAgent, ParallelAgent, LoopAgent, SequentialAgent) to detect hazards, assess vulnerabilities, plan routes, coordinate resources, and produce audited response plans — all streamed live to a command-center operations dashboard with API key auth, metrics, incident memory, and auto-demo mode.
 
 > **Live Demo:** https://frontend-747675777203.us-central1.run.app
 
@@ -144,6 +144,12 @@ cd frontend && npm install && npm run dev
 | `GET` | `/api/dashboard` | Aggregated dashboard stats | — |
 | `GET` | `/api/stream` | SSE real-time event stream | — |
 | `POST` | `/api/clear` | Clear all simulation data | 5/hr |
+| `GET` | `/api/metrics` | Agent performance metrics | — |
+| `GET` | `/api/learnings` | Past incident learnings | — |
+| `GET` | `/api/incidents/{id}/export` | Full incident data export | — |
+| `POST` | `/api/shelters/{id}/checkin` | Shelter evacuee check-in | — |
+| `POST` | `/api/demo/auto` | Auto-run all 3 demo scenarios | 2/hr |
+| `POST` | `/api/keys` | Create API key (admin only) | — |
 
 See [API.md](API.md) for full request/response schemas.
 
@@ -171,13 +177,27 @@ See [API.md](API.md) for full request/response schemas.
 | **Grid Outage** | Power grid failure across downtown Tampa and Davis Islands. TECO substations offline, hospital generators failing. 15,000+ without power. |
 | **Multi-Zone Emergency** | Storm surge in South Tampa, structural collapse in Ybor City, hazmat near Port Tampa. 5 shelters activating, 12,000 affected. |
 
+## v2 Features
+
+- **Real Google ADK agents** — LlmAgent, ParallelAgent, LoopAgent, SequentialAgent (not async function wrappers)
+- **API key authentication** — 3 roles (viewer/operator/admin), auto-bootstrap on first boot
+- **Workflow progress bar** — Live 6-stage visual progress (Trigger → Analyzing → Planning → Auditing → Executing → Complete)
+- **Metrics dashboard** — Agent execution times, tool call frequency, incident stats at `/metrics`
+- **Incident memory** — Gemini extracts lessons learned, future plans reference past incidents
+- **Shelter check-in** — Real-time evacuee tracking with SSE updates
+- **Auto-demo mode** — `POST /api/demo/auto` runs all 3 scenarios hands-free
+- **Incident export** — Full JSON export of incident + trace + tasks + alerts
+- **Security headers** — X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy, XSS-Protection
+- **Task management** — Drag-to-advance task status (pending → in_progress → completed)
+
 ## Security
 
-- **Rate limiting** — slowapi (20/min simulate, 5/hr clear, 10/min cancel)
+- **API key auth** — `X-API-Key` header required, 3 roles (viewer/operator/admin)
+- **Rate limiting** — slowapi (20/min simulate, 5/hr clear, 2/hr auto-demo)
 - **CORS** — Restricted to frontend origin via `ALLOWED_ORIGINS` env var
 - **Input validation** — Scenario 1-2000 chars, task status regex-validated, model Literal types
+- **Security headers** — HSTS, X-Frame-Options, X-Content-Type-Options, XSS-Protection, Referrer-Policy
 - **Credentials** — `.env` gitignored, API keys via Cloud Run env vars
-- **No authentication** (hackathon MVP) — add OAuth/API keys for production
 
 ## Environment Variables
 
