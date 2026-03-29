@@ -26,6 +26,7 @@ from backend.services.auth import (
     validate_api_key,
 )
 from backend.services.metrics import get_metrics
+from backend.services.incident_memory import extract_learnings, get_relevant_learnings
 from backend.workflows.incident_workflow import start_workflow, cancel_all_workflows
 
 # ---------------------------------------------------------------------------
@@ -276,6 +277,102 @@ class CreateKeyRequest(BaseModel):
 async def create_key(body: CreateKeyRequest):
     result = await create_api_key(role=body.role, label=body.label)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Learnings (incident memory)
+# ---------------------------------------------------------------------------
+@app.get("/api/learnings")
+async def get_learnings(scenario: str = Query(default=""), limit: int = Query(default=3, ge=1, le=50)):
+    return await get_relevant_learnings(scenario=scenario, limit=limit)
+
+
+# ---------------------------------------------------------------------------
+# Incident export
+# ---------------------------------------------------------------------------
+@app.get("/api/incidents/{incident_id}/export")
+async def export_incident(incident_id: str):
+    incident = await fs.get_incident(incident_id)
+    if incident is None:
+        raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
+    traces = await fs.get_traces(incident_id)
+    tasks = await fs.get_tasks(incident_id)
+    alerts = await fs.get_alerts(incident_id)
+    return {
+        "incident": incident.model_dump(),
+        "traces": [t.model_dump() for t in traces],
+        "tasks": [t.model_dump() for t in tasks],
+        "alerts": [a.model_dump() for a in alerts],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Shelter check-in
+# ---------------------------------------------------------------------------
+@app.post("/api/shelters/{shelter_id}/checkin")
+async def shelter_checkin(shelter_id: str, count: int = Query(default=1, ge=1, le=500)):
+    from backend.tools.firestore_tool import read_document, update_document
+    doc = await read_document("shelters", shelter_id)
+    if doc is None:
+        # Ensure shelters are seeded, then retry
+        await fs.get_shelters()
+        doc = await read_document("shelters", shelter_id)
+        if doc is None:
+            raise HTTPException(status_code=404, detail=f"Shelter {shelter_id} not found")
+    current_occupancy = doc.get("occupancy", 0)
+    capacity = doc.get("capacity", 0)
+    new_occupancy = current_occupancy + count
+    if new_occupancy > capacity:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Check-in would exceed capacity ({new_occupancy}/{capacity})",
+        )
+    await update_document("shelters", shelter_id, {"occupancy": new_occupancy})
+    await stream_manager.broadcast("incident_update", {
+        "event": "shelter_checkin",
+        "shelter_id": shelter_id,
+        "occupancy": new_occupancy,
+        "capacity": capacity,
+    })
+    return {
+        "shelter_id": shelter_id,
+        "occupancy": new_occupancy,
+        "capacity": capacity,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Demo mode
+# ---------------------------------------------------------------------------
+DEMO_SCENARIOS = [
+    "Category 4 hurricane approaching Tampa Bay with 130mph winds and 12ft storm surge expected within 6 hours",
+    "Major flooding in downtown Tampa after levee breach on Hillsborough River, 5000 residents at risk",
+    "Chemical plant explosion in East Tampa industrial district, toxic plume moving northwest toward residential areas",
+]
+
+
+@app.post("/api/demo/auto", dependencies=[Depends(require_role("operator", "admin"))])
+@limiter.limit("2/hour")
+async def demo_auto(request: Request):
+    import asyncio
+    # Clear existing data
+    await fs.clear_all()
+
+    results = []
+    for scenario_text in DEMO_SCENARIOS:
+        result = await start_workflow({
+            "scenario": scenario_text,
+            "trigger_source": "demo",
+        })
+        results.append(result)
+        # Brief pause between scenarios to spread out processing
+        await asyncio.sleep(0.5)
+
+    return {
+        "status": "demo_started",
+        "scenarios_launched": len(results),
+        "incidents": results,
+    }
 
 
 # ---------------------------------------------------------------------------
