@@ -143,8 +143,9 @@ async def validate_api_key(
     Raises:
         HTTPException 401 if the key is invalid or inactive.
     """
-    # Dev mode: no keys configured -> allow everything as admin
-    if not _key_store:
+    # Auth disabled or no keys configured -> allow everything as admin
+    from backend.config import settings
+    if not settings.is_auth_required or not _key_store:
         return {"role": "admin", "key_id": "dev-mode"}
 
     if not api_key:

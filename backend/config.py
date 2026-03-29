@@ -35,6 +35,10 @@ class Settings(BaseSettings):
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
+    AUTH_REQUIRED: str = Field(
+        default="false",
+        description="When 'true', require X-API-Key header on write endpoints.",
+    )
 
     @property
     def is_mock(self) -> bool:
@@ -43,6 +47,10 @@ class Settings(BaseSettings):
     @property
     def is_sse_enabled(self) -> bool:
         return self.SSE_ENABLED.lower() == "true"
+
+    @property
+    def is_auth_required(self) -> bool:
+        return self.AUTH_REQUIRED.lower() == "true"
 
     model_config = {
         "env_file": ".env",

@@ -18,7 +18,20 @@ export default function AuthGate({ children }: AuthGateProps) {
   }, []);
 
   useEffect(() => {
-    checkKey();
+    // Check if backend requires auth — if /health works without key, skip gate
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${base}/api/dashboard`)
+      .then((r) => {
+        if (r.ok) {
+          // Backend doesn't require auth (dev mode) — auto-skip
+          localStorage.setItem('gridguardian_api_key', 'dev_auto');
+          setHasKey(true);
+        } else {
+          checkKey();
+        }
+      })
+      .catch(() => checkKey());
+
     const handleAuthRequired = () => {
       setHasKey(false);
       setError('Session expired or invalid API key. Please re-enter.');
