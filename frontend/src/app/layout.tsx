@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import StreamingProvider from '@/components/StreamingProvider';
+import AuthGate from '@/components/AuthGate';
 import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
@@ -22,8 +23,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-slate-950 text-white antialiased">
         <StreamingProvider>
-          <Navbar />
-          <main className="mx-auto max-w-screen-2xl">{children}</main>
+          <AuthGate>
+            <Navbar />
+            <main className="mx-auto max-w-screen-2xl">{children}</main>
+          </AuthGate>
         </StreamingProvider>
       </body>
     </html>

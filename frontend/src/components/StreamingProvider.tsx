@@ -125,6 +125,47 @@ export default function StreamingProvider({ children }: { children: React.ReactN
           );
         } catch {}
       });
+
+      es.addEventListener('workflow_stage', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          setIncident((prev) =>
+            prev ? { ...prev, status: data.stage || data.status || prev.status } : prev
+          );
+        } catch {}
+      });
+
+      es.addEventListener('agent_output', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          setAgents((prev) => {
+            const idx = prev.findIndex((a) => a.name === data.agent);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = {
+                ...next[idx],
+                summary: (next[idx].summary || '') + (data.output || data.text || ''),
+              };
+              return next;
+            }
+            return prev;
+          });
+        } catch {}
+      });
+
+      es.addEventListener('shelter_update', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] shelter_update:', data);
+        } catch {}
+      });
+
+      es.addEventListener('demo_stage', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] demo_stage:', data);
+        } catch {}
+      });
     } catch {
       setConnected(false);
       reconnectTimeoutRef.current = setTimeout(() => {

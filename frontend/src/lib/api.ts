@@ -1,12 +1,31 @@
-import type { Incident, TraceEvent, Task, Alert, DashboardData } from './types';
+import type { Incident, TraceEvent, Task, Alert, DashboardData, MetricsData } from './types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
+function getApiKey(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('gridguardian_api_key');
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const apiKey = getApiKey();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
   const res = await fetch(`${BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   });
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gridguardian_api_key');
+      window.dispatchEvent(new Event('auth_required'));
+    }
+    throw new Error('Authentication required');
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => 'Unknown error');
     throw new Error(`API error ${res.status}: ${text}`);
@@ -60,4 +79,38 @@ export async function clearData(): Promise<void> {
 
 export async function getIncidents(): Promise<any[]> {
   return request<any[]>('/api/incidents');
+}
+
+export async function getMetrics(): Promise<MetricsData> {
+  return request<MetricsData>('/api/metrics');
+}
+
+export async function exportIncident(id: string): Promise<any> {
+  return request<any>(`/api/incidents/${id}/export`);
+}
+
+export async function startAutoDemo(): Promise<any> {
+  return request<any>('/api/demo/auto', { method: 'POST' });
+}
+
+export async function shelterCheckin(id: string, count: number): Promise<any> {
+  return request<any>(`/api/shelters/${id}/checkin?count=${count}`, { method: 'POST' });
+}
+
+export async function getLearnings(): Promise<any[]> {
+  return request<any[]>('/api/learnings');
+}
+
+export async function createApiKey(label: string, role: string): Promise<any> {
+  return request<any>('/api/keys', {
+    method: 'POST',
+    body: JSON.stringify({ label, role }),
+  });
+}
+
+export async function updateTaskStatus(id: string, status: string): Promise<Task> {
+  return request<Task>(`/api/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
 }

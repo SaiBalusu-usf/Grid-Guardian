@@ -58,6 +58,15 @@ export interface DashboardData {
   recent_incidents: Incident[];
 }
 
+export type WorkflowStage = 'initiated' | 'analyzing' | 'planning' | 'auditing' | 'executing' | 'completed' | 'failed' | 'cancelled';
+
+export interface MetricsData {
+  agents: Record<string, { total_runs: number; avg_duration_ms: number; avg_tokens: number; errors: number }>;
+  tools: Record<string, { calls: number; avg_ms: number }>;
+  incidents: { total: number; completed: number; failed: number; active: number };
+  uptime_seconds: number;
+}
+
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type IncidentStatus = 'analyzing' | 'planning' | 'executing' | 'monitoring' | 'resolved' | 'closed';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
