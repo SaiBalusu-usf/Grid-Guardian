@@ -5,18 +5,26 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from sse_starlette.sse import EventSourceResponse
 
 from backend.config import settings
 from backend.services import firestore_service as fs
 from backend.services.streaming import stream_manager
+from backend.services.auth import (
+    bootstrap_admin_key,
+    create_api_key,
+    require_role,
+    validate_api_key,
+)
 from backend.workflows.incident_workflow import start_workflow, cancel_all_workflows
 
 # ---------------------------------------------------------------------------
@@ -41,6 +49,7 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.info("GridGuardian starting (mock=%s, sse=%s)", settings.is_mock, settings.is_sse_enabled)
+    await bootstrap_admin_key()
     yield
     logger.info("GridGuardian shutting down, cancelling active workflows")
     await cancel_all_workflows()
@@ -67,6 +76,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Security headers middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +151,7 @@ async def health():
 # ---------------------------------------------------------------------------
 # Incidents
 # ---------------------------------------------------------------------------
-@app.post("/api/incidents/simulate")
+@app.post("/api/incidents/simulate", dependencies=[Depends(require_role("operator", "admin"))])
 @limiter.limit("20/minute")
 async def simulate_incident(body: SimulateRequest, request: Request):
     result = await start_workflow(body.model_dump())
@@ -153,7 +177,7 @@ async def get_incident_trace(incident_id: str):
     return [t.model_dump() for t in traces]
 
 
-@app.post("/api/incidents/{incident_id}/cancel")
+@app.post("/api/incidents/{incident_id}/cancel", dependencies=[Depends(require_role("operator", "admin"))])
 @limiter.limit("10/minute")
 async def cancel_incident(incident_id: str, request: Request):
     incident = await fs.get_incident(incident_id)
@@ -176,7 +200,7 @@ async def get_tasks(incident_id: str | None = Query(default=None)):
     return [t.model_dump() for t in tasks]
 
 
-@app.patch("/api/tasks/{task_id}")
+@app.patch("/api/tasks/{task_id}", dependencies=[Depends(require_role("operator", "admin"))])
 async def update_task_status(task_id: str, body: TaskStatusUpdate):
     try:
         task = await fs.update_task(task_id, {"status": body.status})
@@ -195,7 +219,7 @@ async def get_alerts(incident_id: str | None = Query(default=None)):
     return [a.model_dump() for a in alerts]
 
 
-@app.post("/api/alerts/{alert_id}/ack")
+@app.post("/api/alerts/{alert_id}/ack", dependencies=[Depends(require_role("operator", "admin"))])
 async def acknowledge_alert(alert_id: str):
     try:
         alert = await fs.acknowledge_alert(alert_id)
@@ -224,11 +248,25 @@ async def get_dashboard():
 # ---------------------------------------------------------------------------
 # Clear data
 # ---------------------------------------------------------------------------
-@app.post("/api/clear")
+@app.post("/api/clear", dependencies=[Depends(require_role("admin"))])
 @limiter.limit("5/hour")
 async def clear_data(request: Request):
     await fs.clear_all()
     return {"status": "cleared"}
+
+
+# ---------------------------------------------------------------------------
+# API Keys
+# ---------------------------------------------------------------------------
+class CreateKeyRequest(BaseModel):
+    role: str = Field(default="viewer", pattern="^(viewer|operator|admin)$")
+    label: str = Field(default="", max_length=200)
+
+
+@app.post("/api/keys", dependencies=[Depends(require_role("admin"))])
+async def create_key(body: CreateKeyRequest):
+    result = await create_api_key(role=body.role, label=body.label)
+    return result
 
 
 # ---------------------------------------------------------------------------
