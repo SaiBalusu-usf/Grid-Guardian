@@ -1,6 +1,6 @@
 import type { Incident, TraceEvent, Task, Alert, DashboardData } from './types';
 
-const BASE = '';
+const BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {

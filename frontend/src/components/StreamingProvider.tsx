@@ -33,7 +33,8 @@ export default function StreamingProvider({ children }: { children: React.ReactN
     }
 
     try {
-      const es = new EventSource('/api/stream');
+      const base = process.env.NEXT_PUBLIC_API_URL || '';
+      const es = new EventSource(`${base}/api/stream`);
       eventSourceRef.current = es;
 
       es.onopen = () => {
