@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 from backend.agents.orchestrator import run_incident_workflow
+from backend.agents.adk_runner import run_adk_workflow
 from backend.services.streaming import stream_manager
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,24 @@ async def start_workflow(scenario: dict) -> dict:
 
     async def _run() -> None:
         try:
+            # ----------------------------------------------------------
+            # Try ADK runner first; falls back to legacy if it returns None
+            # ----------------------------------------------------------
+            adk_result = await run_adk_workflow(
+                scenario=scenario,
+                incident_id=incident.id,
+                stream_manager=stream_manager,
+            )
+
+            if adk_result is not None:
+                # ADK succeeded -- persist results to Firestore
+                await _persist_adk_results(incident.id, adk_result)
+                logger.info("ADK workflow for incident %s completed", incident.id)
+                return
+
+            # ----------------------------------------------------------
+            # Legacy fallback path (existing orchestrator)
+            # ----------------------------------------------------------
             result = await run_incident_workflow(
                 scenario={**scenario, "_incident_id": incident.id},
                 stream_manager=stream_manager,
@@ -53,6 +72,71 @@ async def start_workflow(scenario: dict) -> dict:
         "scenario": incident.scenario,
         "message": "Incident workflow started. Poll GET /api/incidents/{id} for progress.",
     }
+
+
+async def _persist_adk_results(incident_id: str, adk_result: dict) -> None:
+    """Persist ADK runner output into Firestore (tasks, alerts, incident update)."""
+    from backend.models.task import Task
+    from backend.models.alert import Alert
+    from backend.services import firestore_service as fs
+
+    # Create tasks from the plan
+    plan = adk_result.get("plan")
+    if isinstance(plan, dict):
+        for task_data in plan.get("phases", []):
+            for action_text in task_data.get("actions", []):
+                task = Task(
+                    incident_id=incident_id,
+                    title=action_text[:500] if isinstance(action_text, str) else str(action_text)[:500],
+                    priority="high" if task_data.get("phase") == "immediate" else "medium",
+                    assignee_type="crew",
+                    status="pending",
+                )
+                await fs.create_task(task)
+                await stream_manager.broadcast("task_update", {
+                    "incident_id": incident_id,
+                    "task_id": task.id,
+                    "title": task.title,
+                    "status": "pending",
+                })
+
+    # Create alerts
+    alerts_data = adk_result.get("alerts")
+    if isinstance(alerts_data, dict):
+        for alert_info in alerts_data.get("alerts_sent", []):
+            alert = Alert(
+                incident_id=incident_id,
+                message=alert_info.get("channel", "broadcast") + " alert dispatched",
+                severity=alert_info.get("severity", "high"),
+                region="Tampa Bay, FL",
+                status="draft",
+            )
+            await fs.create_alert(alert)
+            await stream_manager.broadcast("alert_update", {
+                "incident_id": incident_id,
+                "alert_id": alert.id,
+                "severity": alert.severity,
+            })
+
+    # Finalize the incident
+    severity = "high"
+    confidence = 0.0
+    if isinstance(plan, dict):
+        severity = plan.get("severity", "high")
+        confidence = 0.85
+
+    await fs.update_incident(incident_id, {
+        "status": "completed",
+        "severity": severity,
+        "confidence": confidence,
+        "final_plan": plan,
+    })
+
+    await stream_manager.broadcast("incident_update", {
+        "incident_id": incident_id,
+        "status": "completed",
+        "engine": "adk",
+    })
 
 
 async def cancel_all_workflows() -> None:
