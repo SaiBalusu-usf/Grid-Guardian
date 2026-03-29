@@ -144,6 +144,7 @@ export default function MapView({
               weight: 3,
               dashArray: '8 4',
               opacity: 0.8,
+              className: 'animated-route',
             }}
           >
             {route.label && (

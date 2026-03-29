@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Building2,
   Users,
@@ -8,15 +9,23 @@ import {
   Zap,
   Heart,
   PawPrint,
+  UserPlus,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { shelterCheckin } from '@/lib/api';
 import type { Shelter } from '@/lib/types';
 
 interface ShelterPanelProps {
   shelter: Shelter;
+  onCheckin?: (shelterId: string, newOccupancy: number) => void;
 }
 
-export default function ShelterPanel({ shelter }: ShelterPanelProps) {
+export default function ShelterPanel({ shelter, onCheckin }: ShelterPanelProps) {
+  const [checking, setChecking] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const occupancyPercent =
     shelter.capacity > 0 ? (shelter.occupancy / shelter.capacity) * 100 : 0;
 
@@ -31,6 +40,23 @@ export default function ShelterPanel({ shelter }: ShelterPanelProps) {
   }
 
   const supplies = Object.entries(shelter.supplies || {});
+
+  const handleCheckin = async () => {
+    if (checking) return;
+    setChecking(true);
+    try {
+      await shelterCheckin(shelter.shelter_id, 1);
+      if (onCheckin) {
+        onCheckin(shelter.shelter_id, shelter.occupancy + 1);
+      }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    } catch (err) {
+      console.error('Checkin failed:', err);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <div className="rounded-xl border border-slate-700/50 bg-slate-800/60 p-4 transition-all duration-200 hover:bg-slate-800/80">
@@ -108,19 +134,47 @@ export default function ShelterPanel({ shelter }: ShelterPanelProps) {
         </div>
       )}
 
-      <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center gap-3">
-        <div className="flex items-center gap-1 text-[10px]">
-          <Zap className="h-3 w-3 text-emerald-400" />
-          <span className="text-slate-400">Power</span>
+      <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 text-[10px]">
+            <Zap className="h-3 w-3 text-emerald-400" />
+            <span className="text-slate-400">Power</span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px]">
+            <Heart className="h-3 w-3 text-red-400" />
+            <span className="text-slate-400">Medical</span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px]">
+            <PawPrint className="h-3 w-3 text-amber-400" />
+            <span className="text-slate-400">Pet-Friendly</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-[10px]">
-          <Heart className="h-3 w-3 text-red-400" />
-          <span className="text-slate-400">Medical</span>
-        </div>
-        <div className="flex items-center gap-1 text-[10px]">
-          <PawPrint className="h-3 w-3 text-amber-400" />
-          <span className="text-slate-400">Pet-Friendly</span>
-        </div>
+
+        <button
+          onClick={handleCheckin}
+          disabled={checking || shelter.occupancy >= shelter.capacity}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all duration-200 border',
+            showSuccess
+              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+              : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25',
+            (checking || shelter.occupancy >= shelter.capacity) && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          {checking ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : showSuccess ? (
+            <>
+              <Check className="h-3 w-3" />
+              Done
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-3 w-3" />
+              Check In
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

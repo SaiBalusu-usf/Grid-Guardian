@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building2, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import ShelterPanel from '@/components/ShelterPanel';
 import type { Shelter } from '@/lib/types';
@@ -51,6 +51,14 @@ export default function SheltersPage() {
       .then((r) => r.ok ? r.json() : Promise.reject('API error'))
       .then((data) => { setShelters(data); setLoading(false); })
       .catch(() => { setShelters(MOCK_SHELTERS); setLoading(false); });
+  }, []);
+
+  const handleCheckin = useCallback((shelterId: string, newOccupancy: number) => {
+    setShelters((prev) =>
+      prev.map((s) =>
+        s.shelter_id === shelterId ? { ...s, occupancy: newOccupancy } : s
+      )
+    );
   }, []);
 
   const totalCapacity = shelters.reduce((sum, s) => sum + s.capacity, 0);
@@ -132,7 +140,7 @@ export default function SheltersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {shelters.map((shelter) => (
-            <ShelterPanel key={shelter.shelter_id} shelter={shelter} />
+            <ShelterPanel key={shelter.shelter_id} shelter={shelter} onCheckin={handleCheckin} />
           ))}
         </div>
       )}

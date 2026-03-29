@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useMemo } from 'react';
+import { Suspense, useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ListTodo, Loader2, ArrowUpDown } from 'lucide-react';
 import { useTasks, useIncident } from '@/lib/hooks';
@@ -28,7 +28,7 @@ function sortByPriority(tasks: Task[]): Task[] {
   );
 }
 
-function TaskColumn({ title, tasks, color }: { title: string; tasks: Task[]; color: string }) {
+function TaskColumn({ title, tasks, color, onStatusUpdate }: { title: string; tasks: Task[]; color: string; onStatusUpdate?: (task: Task) => void }) {
   const colorMap: Record<string, string> = {
     amber: 'border-amber-500/30 text-amber-400',
     blue: 'border-blue-500/30 text-blue-400',
@@ -53,7 +53,7 @@ function TaskColumn({ title, tasks, color }: { title: string; tasks: Task[]; col
             <p className="text-xs text-slate-600">No tasks</p>
           </div>
         ) : (
-          tasks.map((task) => <TaskCard key={task.id} task={task} />)
+          tasks.map((task) => <TaskCard key={task.id} task={task} onStatusUpdate={onStatusUpdate} />)
         )}
       </div>
     </div>
@@ -64,8 +64,17 @@ function TasksContent() {
   const searchParams = useSearchParams();
   const incidentId = searchParams.get('incident');
   const { incident } = useIncident(incidentId);
-  const { tasks, loading, error } = useTasks(incidentId);
+  const { tasks: hookTasks, loading, error } = useTasks(incidentId);
   const [sortByPriorityEnabled, setSortByPriorityEnabled] = useState(true);
+  const [taskOverrides, setTaskOverrides] = useState<Record<string, Task>>({});
+
+  const tasks = useMemo(() => {
+    return hookTasks.map((t) => taskOverrides[t.id] || t);
+  }, [hookTasks, taskOverrides]);
+
+  const handleStatusUpdate = useCallback((updated: Task) => {
+    setTaskOverrides((prev) => ({ ...prev, [updated.id]: updated }));
+  }, []);
 
   const columns = useMemo(() => {
     return COLUMNS.map((col) => {
@@ -133,6 +142,7 @@ function TasksContent() {
               title={col.label}
               tasks={col.tasks}
               color={col.color}
+              onStatusUpdate={handleStatusUpdate}
             />
           ))}
         </div>
@@ -143,7 +153,7 @@ function TasksContent() {
           <h3 className="text-sm font-semibold text-slate-400 mb-2">Other Tasks</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {otherTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} onStatusUpdate={handleStatusUpdate} />
             ))}
           </div>
         </div>

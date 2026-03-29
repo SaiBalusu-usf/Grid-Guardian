@@ -197,3 +197,13 @@
 .animate-scale-in {
   animation: scaleIn 0.3s ease-out;
 }
+
+/* Animated route dashes for map evacuation routes */
+@keyframes dashOffset {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -24; }
+}
+
+.leaflet-overlay-pane path.animated-route {
+  animation: dashOffset 1s linear infinite;
+}
