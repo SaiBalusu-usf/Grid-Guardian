@@ -404,7 +404,7 @@ fastapi==0.162.0 \
     #   -r backend/requirements.txt
     #   google-adk
 google-adk==2.13.0+gridguardian.1 \
-    --hash=sha256:b3f2ed7f174f96327ba3d0f6facd40cfaa8cf5a607d7499829cb3f6abf90e9c8
+    --hash=sha256:91ae4cec63899e31898a0e614ca8f9a8dca0d719823b3c82e0d1c3a6f83f7ca2
     # via -r backend/requirements.txt
 google-api-core==2.43.0 \
     --hash=sha256:d67355a22d995a009b6c5ca98744ea35fbf4f9c2c006aa0588c0941d1ceb5216 \

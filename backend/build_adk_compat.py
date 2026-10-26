@@ -56,6 +56,8 @@ def build(source: bytes, output: Path) -> None:
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as wheel:
         for name, data in sorted(entries.items()):
             info = ZipInfo(name, date_time=(2026, 10, 26, 0, 0, 0))
+            # ZipInfo otherwise embeds the builder OS (Windows=0, Unix=3).
+            info.create_system = 3
             info.compress_type = ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             wheel.writestr(info, data)
