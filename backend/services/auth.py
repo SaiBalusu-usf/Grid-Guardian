@@ -1,13 +1,11 @@
 """API key authentication and role-based access control.
 
 Key management:
-  - On first boot, bootstrap_admin_key() creates an admin key if none exist.
+  - On first boot, bootstrap_admin_key() loads persisted keys or an operator-provided key.
   - Keys are stored hashed (SHA-256) in an in-memory registry (and optionally
-    Firestore via the firestore_tool).  The plain-text key is only printed once
-    at startup.
+    Firestore via the firestore_tool). Bootstrap key material is never logged.
   - validate_api_key is a FastAPI Security dependency that checks the
-    X-API-Key header.  When no keys are configured it allows all requests
-    as admin (dev mode).
+    X-API-Key header. An empty key registry fails closed.
   - require_role() returns a dependency factory that checks the caller's role.
 """
 
@@ -53,21 +51,27 @@ def _generate_raw_key() -> str:
 # ---------------------------------------------------------------------------
 
 async def bootstrap_admin_key() -> None:
-    """Create an admin API key on first boot if none exist.
-
-    The plain-text key is logged once so the operator can copy it.
-    Subsequent calls are a no-op.
-    """
+    """Load existing keys, or use a key explicitly supplied by the operator."""
     global _bootstrapped
     if _bootstrapped:
         return
-    _bootstrapped = True
-
+    from backend.config import settings
+    if not settings.is_auth_required:
+        if not settings.is_mock:
+            raise RuntimeError("Authentication may only be disabled in explicit mock mode")
+        _bootstrapped = True
+        return
+    from backend.tools.firestore_tool import query_collection
+    for document in await query_collection("api_keys"):
+        record = ApiKey.model_validate(document)
+        _key_store[record.key_hash] = record
     if _key_store:
         logger.info("API keys already loaded (%d keys)", len(_key_store))
+        _bootstrapped = True
         return
-
-    raw_key = _generate_raw_key()
+    raw_key = settings.ADMIN_API_KEY.get_secret_value()
+    if len(raw_key) < 32:
+        raise RuntimeError("Configure ADMIN_API_KEY with at least 32 characters before startup")
     hashed = _hash_key(raw_key)
 
     api_key = ApiKey(
@@ -77,17 +81,8 @@ async def bootstrap_admin_key() -> None:
     )
     _key_store[hashed] = api_key
 
-    # Store in Firestore for persistence (best-effort)
-    try:
-        from backend.tools.firestore_tool import write_document
-        await write_document("api_keys", api_key.key_id, api_key.model_dump())
-    except Exception:
-        pass
-
-    logger.info("=" * 60)
-    logger.info("BOOTSTRAP ADMIN API KEY (save this, shown only once):")
-    logger.info("  %s", raw_key)
-    logger.info("=" * 60)
+    _bootstrapped = True
+    logger.info("Loaded operator-provided bootstrap admin key")
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +130,7 @@ async def validate_api_key(
 ) -> dict[str, str]:
     """FastAPI dependency: validate the X-API-Key header.
 
-    Dev mode: if no keys are configured, all requests are allowed as admin.
+    Authentication can be disabled only in explicit mock mode.
 
     Returns:
         Dict with "role" and "key_id".
@@ -143,10 +138,11 @@ async def validate_api_key(
     Raises:
         HTTPException 401 if the key is invalid or inactive.
     """
-    # Auth disabled or no keys configured -> allow everything as admin
     from backend.config import settings
-    if not settings.is_auth_required or not _key_store:
+    if not settings.is_auth_required and settings.is_mock:
         return {"role": "admin", "key_id": "dev-mode"}
+    if not settings.is_auth_required or not _key_store:
+        raise HTTPException(status_code=503, detail="Authentication is not configured")
 
     if not api_key:
         raise HTTPException(status_code=401, detail="Missing X-API-Key header")

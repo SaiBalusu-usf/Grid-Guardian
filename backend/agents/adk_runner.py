@@ -38,7 +38,7 @@ async def run_adk_workflow(
     # ------------------------------------------------------------------
     # Guard: no API key means we cannot run ADK agents
     # ------------------------------------------------------------------
-    if not settings.GEMINI_API_KEY:
+    if settings.is_mock or not settings.GEMINI_API_KEY:
         logger.info("GEMINI_API_KEY not set -- skipping ADK runner, will use legacy path")
         return None
 
@@ -119,7 +119,10 @@ async def run_adk_workflow(
         # --------------------------------------------------------------
         # 5. Extract results from session state
         # --------------------------------------------------------------
-        state = session.state or {}
+        updated_session = await session_service.get_session(
+            app_name="gridguardian", user_id="system", session_id=session.id,
+        )
+        state = updated_session.state if updated_session else {}
 
         result_keys = [
             "hazard_output",

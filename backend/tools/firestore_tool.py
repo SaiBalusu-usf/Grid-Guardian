@@ -28,6 +28,11 @@ def _get_client() -> Any:
 
     _initialized = True
 
+    if settings.is_mock:
+        _using_memory_fallback = True
+        _firestore_client = None
+        return None
+
     try:
         from google.cloud import firestore as _firestore_lib
 
