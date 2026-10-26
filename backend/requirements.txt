@@ -1,7 +1,10 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.34.0
 google-cloud-firestore>=2.19.0
-google-adk>=1.2.0
+--find-links backend/vendor
+google-adk==2.13.0+gridguardian.1
+opentelemetry-api>=1.45.1,<1.46
+opentelemetry-sdk>=1.45.1,<1.46
 google-genai>=1.10.0
 pydantic>=2.10.0
 pydantic-settings>=2.7.0

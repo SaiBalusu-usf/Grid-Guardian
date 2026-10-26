@@ -1,7 +1,7 @@
 """Application configuration loaded from environment variables with sensible defaults."""
 
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 
 class Settings(BaseSettings):
@@ -36,8 +36,12 @@ class Settings(BaseSettings):
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
     AUTH_REQUIRED: str = Field(
-        default="false",
+        default="true",
         description="When 'true', require X-API-Key header on write endpoints.",
+    )
+    ADMIN_API_KEY: SecretStr = Field(
+        default=SecretStr(""),
+        description="Operator-provided bootstrap key; never generated or logged at startup.",
     )
 
     @property

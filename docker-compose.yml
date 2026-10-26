@@ -5,6 +5,8 @@ services:
       - "8000:8000"
     environment:
       - USE_MOCK=true
+      - AUTH_REQUIRED=${AUTH_REQUIRED:-true}
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-}
       - SHELTER_AGENT_URL=http://shelter-agent:8001
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-gridguardian-491621}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}

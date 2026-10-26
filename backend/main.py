@@ -109,13 +109,17 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @app.middleware("http")
 async def error_handling_middleware(request: Request, call_next):
     try:
+        if request.url.path.startswith("/api/"):
+            await validate_api_key(request.headers.get("X-API-Key"))
         response = await call_next(request)
         return response
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     except Exception as exc:
         logger.exception("Unhandled error: %s", exc)
         return JSONResponse(
             status_code=500,
-            content={"error": "internal_server_error", "detail": str(exc)},
+            content={"error": "internal_server_error", "detail": "An internal error occurred"},
         )
 
 
